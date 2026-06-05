@@ -1,0 +1,15 @@
+{
+  "name": "the-sketch-project",
+  "version": "1.0.0",
+  "description": "A high-end, AI-driven utility combining fluid workspace communication with high-density coordinate drafting.",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "node src/main.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "vite": "^8.0.16"
+  }
+}
