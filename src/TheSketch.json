@@ -1,0 +1,14 @@
+{
+  "active_apps": {
+    "app_01": {
+      "name": "Surveyor-Sketch",
+      "gcloud_project_id": "production-cloud-id-123",
+      "local_path": "./src/fieldbook",
+      "deployment_status": "Active"
+    }
+  },
+  "sandboxed_assets": {
+    "core_logic": "./src/core",
+    "conveyer_automation": "./src/conveyer_2"
+  }
+}
