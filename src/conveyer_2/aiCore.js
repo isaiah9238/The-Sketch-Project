@@ -33,10 +33,11 @@ export default class AICore {
         try {
             // 1. Check for explicit Azimuth/Distance traverse shortcuts (e.g., "AZ 90 DIST 150")
             if (lowercaseInput.includes('az') && lowercaseInput.includes('dist')) {
-                const parsedTraverse = this._parseTraverseCommand(rawInput);
-                if (parsedTraverse) {
-                    globalState.coordinates.push(parsedTraverse);
-                    result.extractedCoordinates.push(parsedTraverse);
+                const parsedTraverses = this._parseTraverseCommand(rawInput);
+                if (parsedTraverses && parsedTraverses.length > 0) {
+                    this.LastExtractedPoints = parsedTraverses;
+                    globalState.coordinates.push(...parsedTraverses);
+                    result.extractedCoordinates.push(...parsedTraverses);
                     result.actionsTriggered.push("TRAVERSE_EXTRACTION");
                 }
             }
@@ -62,22 +63,51 @@ export default class AICore {
     }
 
     /**
-     * Internal regex parser to pull raw bearing/distance vectors out of free-form text strings
+     * Internal text parser to pull raw bearing/distance vectors out of free-form text strings.
+     * Built safely using strict token scanning to completely eliminate ReDoS risks.
      * @private
      */
     _parseTraverseCommand(text) {
-        // Simple regex looking for numbers following AZ/Bearing indicators and distances
-        const azMatch = text.match(/az(?:imuth)?\s*[:=]?\s*([0-9.]+)/i);
-        const distMatch = text.match(/dist(?:ance)?\s*[:=]?\s*([0-9.]+)/i);
+        if (!text) return null;
 
-        if (azMatch && distMatch) {
-            return {
-                type: 'traverse_vector',
-                azimuth: parseFloat(azMatch[1]),
-                distance: parseFloat(distMatch[1]),
-                timestamp: new Date().toISOString()
-            };
+        // Split text into individual clean words (tokens)
+        const tokens = text.toUpperCase().replace(/[:=,;]/g, ' ').trim().split(/\s+/);
+        
+        let vectors = [];
+        let azimuth = null;
+        let distance = null;
+
+        // Scan the words sequentially
+        for (let i = 0; i < tokens.length - 1; i++) {
+            if (tokens[i] === 'AZ' || tokens[i] === 'AZIMUTH') {
+                const nextVal = parseFloat(tokens[i + 1]);
+                if (!isNaN(nextVal)) azimuth = nextVal;
+            }
+            if (tokens[i] === 'DIST' || tokens[i] === 'DISTANCE') {
+                const nextVal = parseFloat(tokens[i + 1]);
+                if (!isNaN(nextVal)) distance = nextVal;
+            }
+
+            // Once both values are captured, store them and reset
+            if (azimuth !== null && distance !== null) {
+                vectors.push({
+                    type: 'traverse_vector',
+                    azimuth: azimuth,
+                    distance: distance,
+                    timestamp: new Date().toISOString()
+                });
+                azimuth = null;
+                distance = null;
+            }
         }
-        return null;
+        if (azimuth !== null && distance !== null) {
+            vectors.push({
+                type: 'traverse_vector',
+                azimuth: azimuth,
+                distance: distance,
+                timestamp: new Date().toISOString()
+            });
+        }    
+        return vectors.length > 0 ? vectors : null;
     }
 }

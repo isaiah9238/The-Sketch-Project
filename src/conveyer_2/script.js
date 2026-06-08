@@ -1,5 +1,3 @@
-//This is not for use as in putting the code into the app as is. You will study the different options it provides.
-
 // ==========================================
 // ARITHMAGEN / CONVEYER ENGINE - WORKSPACE CODE
 // ==========================================
@@ -191,6 +189,7 @@ function drawGrid(ctx, cam, cx, cy, w, h) {
     ctx.stroke();
 }
 
+// Rest of unchanged utility block structures
 function drawNorthArrow(ctx, w) {
     const x = w - 40; const y = 40;
     ctx.strokeStyle = '#f3e2a0'; ctx.fillStyle = '#f3e2a0'; ctx.lineWidth = 2;
@@ -223,7 +222,7 @@ function getShapeArea(shape) {
 }
 
 function updateLiveArea() {
-    let target = currentStroke.length > 2 ? currentStroke : (history.length > 0 ? history[history.length-1] : null);
+    let target = currentStroke.length > 2 ? currentStroke : (history.length > 0 ? history[history.length - 1] : null);
     if(target && areaDisplay) {
         const a = getShapeArea(target);
         areaDisplay.innerText = `${a.acres.toFixed(3)} Ac`;
@@ -261,7 +260,6 @@ canvas.addEventListener('mousedown', (e) => {
             const dy = clickY - measureStart.y;
             const dist = Math.sqrt(dx*dx + dy*dy);
             
-            // Fixed North-Based clockwise geodetic azimuth conversion equation
             let az = Math.atan2(dx, dy) * (180 / Math.PI);
             if (az < 0) az += 360;
             
@@ -301,7 +299,6 @@ canvas.addEventListener('mousemove', (e) => {
     const distSq = (x1, y1, x2, y2) => (x1-x2)**2 + (y1-y2)**2;
 
     [...history, currentStroke].forEach(stroke => {
-        // Safe check guarding against empty or unformed active tracking segments
         if (!stroke || stroke.length < 2) return; 
         for (let i = 0; i < stroke.length; i++) {
             const p1 = stroke[i];
@@ -310,7 +307,7 @@ canvas.addEventListener('mousemove', (e) => {
                 if (d < bestDist) { bestDist = d; bestPt = { x: p1.x, y: p1.y }; bestType = "END"; }
             }
             if (i < stroke.length - 1) {
-                const p2 = stroke[i+1];
+                const p2 = stroke[i + 1];
                 if (snapMid && snapMid.checked) {
                     const mx = (p1.x + p2.x) / 2; const my = (p1.y + p2.y) / 2;
                     const d = distSq(mx, my, worldX, worldY);
@@ -379,7 +376,6 @@ if(btnCurve) btnCurve.onclick = () => {
     const centerAngle = startAngle + (isLeft ? (Math.PI / 2) : -(Math.PI / 2));
     const centerX = pen.x + R * Math.cos(centerAngle); const centerY = pen.y + R * Math.sin(centerAngle);
     
-    // Dynamic entry radial calculus calculation mapping
     const steps = 20; let currentTheta = centerAngle + Math.PI;
     const sweep = isLeft ? (Math.PI / 2) : -(Math.PI / 2);
     
@@ -418,11 +414,28 @@ if(btnAddParcel) btnAddParcel.onclick = () => {
     const parcelID = String.fromCharCode(65 + parcels.length); 
     parcels.push({ id: parcelID, acres: area.acres, sqft: area.sqft });
     
-    parcelListBody.innerHTML = ""; 
+    // Safely clear children without parsing string flags
+    parcelListBody.replaceChildren(); 
+    
     parcels.forEach(p => {
         const row = document.createElement('tr');
         row.style.borderBottom = "1px solid #333";
-        row.innerHTML = `<td style="padding:4px; color:#f3e2a0; font-weight:bold;">${p.id}</td><td style="padding:4px; text-align:right;">${p.acres.toFixed(3)}</td><td style="padding:4px; text-align:right; color:#888;">${Math.round(p.sqft)}</td>`;
+
+        const tdId = document.createElement('td');
+        tdId.style.cssText = "padding:4px; color:#f3e2a0; font-weight:bold;";
+        tdId.textContent = p.id;
+
+        const tdAcres = document.createElement('td');
+        tdAcres.style.cssText = "padding:4px; text-align:right;";
+        tdAcres.textContent = p.acres.toFixed(3);
+
+        const tdSqft = document.createElement('td');
+        tdSqft.style.cssText = "padding:4px; text-align:right; color:#888;";
+        tdSqft.textContent = Math.round(p.sqft).toString();
+
+        row.appendChild(tdId);
+        row.appendChild(tdAcres);
+        row.appendChild(tdSqft);
         parcelListBody.appendChild(row);
     });
 };
@@ -442,7 +455,6 @@ if(btnFit) btnFit.onclick = () => {
     camera.x = centerX; camera.y = centerY; camera.zoom = Math.min(zoomX, zoomY, 50); render();
 };
 
-// Handle manual user typing input zoom overrides safely
 if(inputScale) inputScale.onchange = () => {
     const val = parseFloat(inputScale.value);
     if (!isNaN(val) && val >= 0.5 && val <= 100) {
@@ -451,5 +463,4 @@ if(inputScale) inputScale.onchange = () => {
     }
 };
 
-// RUNTIME TRIGGER BOOT
 resize();
