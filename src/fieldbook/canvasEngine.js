@@ -92,12 +92,14 @@ export default class CanvasEngine {
         this.ctx.strokeStyle = '#82ff6f'; // High-contrast Emerald Neon accent
         this.ctx.beginPath();
 
-        const start = this.toScreen(currentCoordinates[0].x, currentCoordinates[0].y);
+        const [firstPt, ...restPts] = currentCoordinates;
+        
+        const start = this.toScreen(firstPt.x, firstPt.y);
         this.ctx.moveTo(start.x, start.y);
 
-        for (let i = 1; i < currentCoordinates.length; i++) {
-            const pt = this.toScreen(currentCoordinates[i].x, currentCoordinates[i].y);
-            this.ctx.lineTo(pt.x, pt.y);
+        for (const pt of restPts) {
+            const screenPt = this.toScreen(pt.x, pt.y);
+            this.ctx.lineTo(screenPt.x, screenPt.y);
         }
         this.ctx.stroke();
     }

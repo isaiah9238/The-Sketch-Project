@@ -71,7 +71,8 @@ export default class AICore {
         if (!text) return null;
 
         // Split text into individual clean words (tokens)
-        const tokens = text.toUpperCase().replace(/[:=,;]/g, ' ').trim().split(/\s+/);
+        // Fixed ReDoS vulnerability: replaced /\s+/ with character-by-character split
+        const tokens = text.toUpperCase().replace(/[:=,;\s]/g, ' ').split(' ').filter(Boolean);
         
         let vectors = [];
         let azimuth = null;
