@@ -3,7 +3,7 @@
  * Processes natural language field notes and maps text scripts to geometric states.
  */
 
-import { globalState } from '../core/stateManager.js';
+import { globalState } from '../../core/stateManager.js';
 
 export default class AICore {
     constructor() {
@@ -23,7 +23,7 @@ export default class AICore {
 
         this.isProcessing = true;
         const lowercaseInput = rawInput.toLowerCase();
-        
+
         const result = {
             success: true,
             actionsTriggered: [],
@@ -67,48 +67,41 @@ export default class AICore {
      * Built safely using strict token scanning to completely eliminate ReDoS risks.
      * @private
      */
-    _parseTraverseCommand(text) {
-        if (!text) return null;
-
-        // Split text into individual clean words (tokens)
-        // Fixed ReDoS vulnerability: replaced /\s+/ with character-by-character split
-        const tokens = text.toUpperCase().replace(/[:=,;\s]/g, ' ').split(' ').filter(Boolean);
+    
+    _parseTraverseCommand() {
         
+        if (!text || typeof text !== 'string') return null;
+
+        const tokens = text.toUpperCase().replace(/[:=,;\s]/g, ' ').split(' ').filter(Boolean);
+
+        if (tokens.length === 0 || tokens.length % 2 !== 0) {
+            console.warn("Input error: Unbalanced or empty tokens.");
+            return null; 
+        };
+
         let vectors = [];
         let azimuth = null;
         let distance = null;
 
-        // Scan the words sequentially
-        for (let i = 0; i < tokens.length - 1; i++) {
-            if (tokens[i] === 'AZ' || tokens[i] === 'AZIMUTH') {
-                const nextVal = parseFloat(tokens[i + 1]);
-                if (!isNaN(nextVal)) azimuth = nextVal;
-            }
-            if (tokens[i] === 'DIST' || tokens[i] === 'DISTANCE') {
-                const nextVal = parseFloat(tokens[i + 1]);
-                if (!isNaN(nextVal)) distance = nextVal;
-            }
+        for (let i = 0; i < tokens.length; i += 2) { 
+            const key = tokens[i]; 
+            const val = parseFloat(tokens[i + 1])
 
-            // Once both values are captured, store them and reset
+            if (isNaN(val)) continue; 
+
+            if (key === 'AZ' || key === 'AZIMUTH') azimuth = val;
+            if (key === 'DIST' || key === 'DISTANCE') distance = val;
+
             if (azimuth !== null && distance !== null) {
                 vectors.push({
                     type: 'traverse_vector',
-                    azimuth: azimuth,
-                    distance: distance,
+                    azimuth,
+                    distance,
                     timestamp: new Date().toISOString()
                 });
                 azimuth = null;
                 distance = null;
-            }
-        }
-        if (azimuth !== null && distance !== null) {
-            vectors.push({
-                type: 'traverse_vector',
-                azimuth: azimuth,
-                distance: distance,
-                timestamp: new Date().toISOString()
-            });
-        }    
+            };
         return vectors.length > 0 ? vectors : null;
-    }
+    }};
 }

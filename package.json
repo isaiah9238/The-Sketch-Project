@@ -4,12 +4,18 @@
   "description": "A high-end, AI-driven utility combining fluid workspace communication with high-density coordinate drafting.",
   "main": "src/main.js",
   "scripts": {
-    "start": "node src/main.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "vite": "^8.0.16"
+    "typescript": "6.0.3",
+    "vite": "8.0.16"
+  },
+  "dependencies": {
+    "jiti": "2.7.0",
+    "stylus": "0.64.0"
   }
 }

@@ -4,8 +4,7 @@
  * and high-contrast UI state updates.
  */
 
-import { getDistanceSq, getPerpendicularProjection, getMidpoint } from './coordinateMath.js';
-import { globalState } from '../core/stateManager.js';
+import { worldCoordinates } from './coordinateMath.js';
 
 export default class CanvasEngine {
     /**
@@ -85,7 +84,7 @@ export default class CanvasEngine {
 
     _renderGeometryPaths() {
         // Pull active coordinate paths straight out of your central state manager
-        const currentCoordinates = globalState.coordinates;
+        const currentCoordinates = globelState.Coordinates;
         if (!currentCoordinates || currentCoordinates.length < 2) return;
 
         this.ctx.lineWidth = 2;

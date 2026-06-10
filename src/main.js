@@ -3,8 +3,8 @@
  * Orchestrates initialization, state binding, and tool interaction loops.
  */
 
-import CanvasEngine from './fieldbook/canvasEngine.js';
-import AICore from './conveyer_2/aiCore.js';
+import CanvasEngine from './entities/fieldbook/canvasEngine.js';
+import AICore from './entities/conveyer_2/aiCore.js';
 import { globalState } from './core/stateManager.js';
 
 // Initialize the core processing modules

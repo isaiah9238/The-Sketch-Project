@@ -1,3 +1,4 @@
 node_modules/
 dist/
 Windows.old/
+pnpm-lock.yaml

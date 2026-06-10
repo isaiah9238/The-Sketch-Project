@@ -3,7 +3,7 @@
  * Handles volatile notes, visual dissolving effects, and split/merge architecture.
  */
 
-import { globalState } from '../core/stateManager.js';
+import { globalState } from '../../core/stateManager.js';
 import AICore from './aiCore.js';
 
 export default class Notepad {
@@ -29,7 +29,7 @@ export default class Notepad {
     bindUI(element) {
         this.domElement = element;
         this.domElement.value = this.content;
-        
+
         // Listen to changes
         this.domElement.addEventListener('input', (e) => {
             this.content = e.target.value;
@@ -44,12 +44,12 @@ export default class Notepad {
      */
     dissolveText(duration = 2000, keepDissolved = false) {
         if (!this.domElement) return;
-        
+
         // Apply visual dissolving effect
         this.domElement.style.transition = `opacity ${duration}ms ease-out, filter ${duration}ms ease-out`;
         this.domElement.style.opacity = '0';
         this.domElement.style.filter = 'blur(4px)';
-        
+
         setTimeout(() => {
             if (!keepDissolved) {
                 this.clear();
@@ -127,10 +127,10 @@ export default class Notepad {
      */
     _commitToState() {
         if (!this.content.trim()) return;
-        
+
         // Check if an entry for this specific notepad instance already exists to avoid array bloat
         const existingNoteIdx = globalState.notes.findIndex(n => n.sourceId === this.id);
-        
+
         const notePayload = {
             timestamp: new Date().toISOString(),
             text: this.content.trim(),
@@ -161,12 +161,12 @@ export default class Notepad {
         this.isAiTyping = true; // Set flag to block self-triggering
         const chatPrefix = "\n🤖 [Conveyer]: ";
         this.content += chatPrefix + message + "\n";
-        
+
         if (this.domElement) {
             this.domElement.value = this.content;
             this.domElement.scrollTop = this.domElement.scrollHeight;
         }
-        
+
         this._commitToState();
         this.isAiTyping = false; // Reset loop guard flag
     }
@@ -178,7 +178,7 @@ export default class Notepad {
     _handleAutoSpark() {
         if (this.isAiTyping) return; // Prevent the AI from triggering its own scanner loop
         if (this.typingTimeout) clearTimeout(this.typingTimeout);
-        
+
         this.typingTimeout = setTimeout(() => {
             if (this.content.trim().length > 10) {
                 console.log(`[Notepad AI] Sparking ideas for: ${this.id}...`);
