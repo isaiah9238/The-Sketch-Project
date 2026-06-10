@@ -3,7 +3,7 @@
  * Processes natural language field notes and maps text scripts to geometric states.
  */
 
-import { globalState } from '../../core/stateManager.js';
+import { globalState } from '../../turningFile.js';
 
 export default class AICore {
     constructor() {
@@ -68,7 +68,7 @@ export default class AICore {
      * @private
      */
     
-    _parseTraverseCommand() {
+    _parseTraverseCommand(text) {
         
         if (!text || typeof text !== 'string') return null;
 
@@ -77,7 +77,7 @@ export default class AICore {
         if (tokens.length === 0 || tokens.length % 2 !== 0) {
             console.warn("Input error: Unbalanced or empty tokens.");
             return null; 
-        };
+        }
 
         let vectors = [];
         let azimuth = null;
@@ -101,7 +101,8 @@ export default class AICore {
                 });
                 azimuth = null;
                 distance = null;
-            };
+            }
+        }
         return vectors.length > 0 ? vectors : null;
-    }};
+    }
 }

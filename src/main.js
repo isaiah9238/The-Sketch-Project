@@ -5,7 +5,7 @@
 
 import CanvasEngine from './entities/fieldbook/canvasEngine.js';
 import AICore from './entities/conveyer_2/aiCore.js';
-import { globalState } from './core/stateManager.js';
+import { globalState } from './turningFile.js';
 
 // Initialize the core processing modules
 let canvasEngineInstance = null;
