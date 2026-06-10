@@ -1,18 +1,22 @@
 /**
  * Linearly interpolates between two numbers.
- * @param start - The beginning value (at fraction 0)
- * @param end - The target value (at fraction 1)
- * @param fraction - A value typically between 0 and 1 representing the progress
+ * @param {number} start - The beginning value (at fraction 0)
+ * @param {number} end - The target value (at fraction 1)
+ * @param {number} fraction - A value typically between 0 and 1 representing the progress
+ * @returns {number}
  */
-function lerp(start: number, end: number, fraction: number): number {
+function lerp(start, end, fraction) {
     return start + (end - start) * fraction;
 }
 
 /**
  * Smoothly interpolates between 0 and 1 using an S-curve.
- * @param fraction - A progress value between 0 and 1
+ * @param {number} start
+ * @param {number} end
+ * @param {number} fraction - A progress value between 0 and 1
+ * @returns {number}
  */
-function smoothstep(start: number, end: number, fraction: number): number {
+function smoothstep(start, end, fraction) {
     // First, clamp the fraction strictly between 0 and 1 to prevent errors
     const x = Math.max(0, Math.min(1, fraction));
     

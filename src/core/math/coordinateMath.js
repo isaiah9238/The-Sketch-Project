@@ -1,1 +1,0 @@
-getDistanceSq, getPerpendicularProjection, getMidpoint

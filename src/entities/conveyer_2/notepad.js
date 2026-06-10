@@ -14,12 +14,19 @@ export default class Notepad {
      */
     constructor(id = 'root') {
         this.id = id;
+        /** @type {string} */
         this.content = "";
+        /** @type {Notepad[]} */
         this.children = [];
+        /** @type {HTMLTextAreaElement | null} */
         this.domElement = null;
+        /** @type {boolean} */
         this.isTranslucent = false;
+        /** @type {AICore} */
         this.aiCore = new AICore(); // Local AI instance for "Sparking Ideas"
+        /** @type {ReturnType<typeof setTimeout> | null} */
         this.typingTimeout = null;
+        /** @type {boolean} */
         this.isAiTyping = false; // Flag to prevent infinite AI reflection loops
     }
 

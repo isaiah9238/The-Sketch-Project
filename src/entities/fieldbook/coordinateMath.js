@@ -4,14 +4,33 @@
  * traversal, and intersection snapping.
  */
 
+/**
+ * @typedef {import('../../turningFile.js').Coordinate} Coordinate
+ */
+
+/**
+ * @param {Coordinate} p1
+ * @param {Coordinate} p2
+ * @returns {number}
+ */
 export function getDistanceSq(p1, p2) {
     return (p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2;
 }
 
+/**
+ * @param {Coordinate} p1
+ * @param {Coordinate} p2
+ * @returns {number}
+ */
 export function getDistance(p1, p2) {
     return Math.sqrt(getDistanceSq(p1, p2));
 }
 
+/**
+ * @param {Coordinate} p1
+ * @param {Coordinate} p2
+ * @returns {number}
+ */
 export function getAzimuth(p1, p2) {
     const dx = p2.x - p1.x;
     const dy = p2.y - p1.y;
@@ -20,6 +39,10 @@ export function getAzimuth(p1, p2) {
     return az;
 }
 
+/**
+ * @param {Coordinate[]} shape
+ * @returns {{sqft: number, acres: number}}
+ */
 export function getShapeArea(shape) {
     if (!shape || shape.length < 3) return { sqft: 0, acres: 0 };
     
@@ -51,6 +74,12 @@ export function getShapeArea(shape) {
     };
 }
 
+/**
+ * @param {Coordinate} startPoint
+ * @param {number} azimuth
+ * @param {number} distance
+ * @returns {Coordinate}
+ */
 export function calculateTraverse(startPoint, azimuth, distance) {
     const radians = (azimuth * Math.PI) / 180;
     return {
@@ -67,6 +96,14 @@ const FACING_ANGLES = Object.freeze({
     'E': 0
 });
 
+/**
+ * @param {Coordinate} startPoint
+ * @param {number} radius
+ * @param {'N'|'S'|'E'|'W'} facing
+ * @param {'Left'|'Right'} turn
+ * @param {number} [steps=20]
+ * @returns {Coordinate[]}
+ */
 export function generateCurvePoints(startPoint, radius, facing, turn, steps = 20) {
     // Safely look up the angle or default to 0 if an invalid input is supplied
     const startAngle = Object.prototype.hasOwnProperty.call(FACING_ANGLES, facing) 
@@ -96,6 +133,11 @@ export function generateCurvePoints(startPoint, radius, facing, turn, steps = 20
     return points;
 }
 
+/**
+ * @param {Coordinate} p1
+ * @param {Coordinate} p2
+ * @returns {Coordinate}
+ */
 export function getMidpoint(p1, p2) {
     return {
         x: (p1.x + p2.x) / 2,
@@ -103,6 +145,12 @@ export function getMidpoint(p1, p2) {
     };
 }
 
+/**
+ * @param {Coordinate} p1
+ * @param {Coordinate} p2
+ * @param {Coordinate} targetPoint
+ * @returns {Coordinate|null}
+ */
 export function getPerpendicularProjection(p1, p2, targetPoint) {
     const A = targetPoint.x - p1.x;
     const B = targetPoint.y - p1.y;

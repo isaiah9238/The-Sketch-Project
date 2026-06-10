@@ -38,7 +38,17 @@ RULES:
 
 // --- Session State ---
 
+/**
+ * @typedef {Object} ConversationEntry
+ * @property {string} timestamp
+ * @property {string} userMessage
+ * @property {string} aiResponse
+ * @property {string} character
+ */
+
+/** @type {import('@google/generative-ai').ChatSession | null} */
 let chatSession = null;
+/** @type {ConversationEntry[]} */
 let conversationHistory = [];
 
 /**
@@ -127,7 +137,7 @@ export async function chat(userMessage) {
 
 /**
  * Get the full conversation history for this session
- * @returns {Array} Array of conversation entries
+ * @returns {ConversationEntry[]} Array of conversation entries
  */
 export function getHistory() {
     return [...conversationHistory];

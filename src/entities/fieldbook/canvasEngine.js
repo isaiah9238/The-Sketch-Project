@@ -4,14 +4,17 @@
  * and high-contrast UI state updates.
  */
 
-import { worldCoordinates } from './coordinateMath.js';
+import { getDistance } from './coordinateMath.js';
+import { globalState } from '../../turningFile.js';
 
 export default class CanvasEngine {
     /**
      * @param {HTMLCanvasElement} canvasElement 
      */
     constructor(canvasElement) {
+        /** @type {HTMLCanvasElement} */
         this.canvas = canvasElement;
+        /** @type {CanvasRenderingContext2D} */
         this.ctx = canvasElement.getContext('2d');
         
         // Render Viewport Parameter Matrix
@@ -43,6 +46,9 @@ export default class CanvasEngine {
     /**
      * Map Cartesian surveying coordinates safely across screen viewport parameters
      * Inverts the Y-Axis so positive values move Upwards natively
+     * @param {number} worldX
+     * @param {number} worldY
+     * @returns {{x: number, y: number}}
      */
     toScreen(worldX, worldY) {
         const cx = this.canvas.width / 2;
@@ -70,6 +76,10 @@ export default class CanvasEngine {
         this._renderOverlays();
     }
 
+    /**
+     * @param {number} cx
+     * @param {number} cy
+     */
     _drawBackgroundGrid(cx, cy) {
         const step = 10;
         const zoom = this.camera.zoom;
@@ -84,7 +94,7 @@ export default class CanvasEngine {
 
     _renderGeometryPaths() {
         // Pull active coordinate paths straight out of your central state manager
-        const currentCoordinates = globelState.Coordinates;
+        const currentCoordinates = globalState.coordinates;
         if (!currentCoordinates || currentCoordinates.length < 2) return;
 
         this.ctx.lineWidth = 2;

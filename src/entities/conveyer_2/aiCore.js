@@ -7,7 +7,9 @@ import { globalState } from '../../turningFile.js';
 
 export default class AICore {
     constructor() {
+        /** @type {boolean} */
         this.isProcessing = false;
+        /** @type {any[]} */
         this.LastExtractedPoints = [];
     }
 
@@ -66,6 +68,8 @@ export default class AICore {
      * Internal text parser to pull raw bearing/distance vectors out of free-form text strings.
      * Built safely using strict token scanning to completely eliminate ReDoS risks.
      * @private
+     * @param {string} text
+     * @returns {any[] | null}
      */
     
     _parseTraverseCommand(text) {

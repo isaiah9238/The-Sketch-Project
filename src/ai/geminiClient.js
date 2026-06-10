@@ -10,8 +10,11 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // --- Singleton State ---
+/** @type {import('@google/generative-ai').GoogleGenerativeAI | null} */
 let genAI = null;
+/** @type {import('@google/generative-ai').GenerativeModel | null} */
 let defaultModel = null;
+/** @type {boolean} */
 let isAvailable = false;
 
 /**
@@ -52,7 +55,7 @@ export function isGeminiAvailable() {
 
 /**
  * Get the underlying GenerativeAI instance for advanced use
- * @returns {GoogleGenerativeAI | null}
+ * @returns {import('@google/generative-ai').GoogleGenerativeAI | null}
  */
 export function getGenAI() {
     return genAI;
@@ -91,8 +94,8 @@ export async function generateContent(prompt, options = {}) {
  * Start a multi-turn chat session with Gemini.
  * @param {Object} [config] - Chat configuration
  * @param {string} [config.systemInstruction] - System-level instruction for the model
- * @param {Array}  [config.history] - Prior conversation history
- * @returns {Object | null} A chat session object, or null if unavailable
+ * @param {Array<Object>} [config.history] - Prior conversation history
+ * @returns {import('@google/generative-ai').ChatSession | null} A chat session object, or null if unavailable
  */
 export function startChat(config = {}) {
     if (!isAvailable || !genAI) {

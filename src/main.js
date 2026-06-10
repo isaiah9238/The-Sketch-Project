@@ -9,18 +9,20 @@ import { globalState } from './turningFile.js';
 import { initConversation } from './ai/conversationEngine.js';
 
 // Initialize the core processing modules
+/** @type {CanvasEngine | null} */
 let canvasEngineInstance = null;
+/** @type {AICore | null} */
 let aiCoreInstance = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log("⚡ [System Boot] Initializing Surveyor-Sketch Workspace...");
 
     // 1. Bind to the hardware canvas view layer
-    const canvasElement = document.getElementById('sketchCanvas');
+    const canvasElement = /** @type {HTMLCanvasElement | null} */ (document.getElementById('sketchCanvas'));
     if (canvasElement) {
         canvasEngineInstance = new CanvasEngine(canvasElement);
         // Expose to window framework for resize hooks if required by the system
-        window.currentCanvasEngine = canvasEngineInstance;
+        /** @type {any} */ (window).currentCanvasEngine = canvasEngineInstance;
     } else {
         console.error("❌ [System Error] Canvas element '#sketchCanvas' missing from DOM.");
     }
@@ -30,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 3. Initialize the Gemini-powered conversation engine (Sketch & Notepad personas)
     // API key is passed in — the AI modules don't know or care where it comes from
-    const geminiKey = import.meta.env.GOOGLE_GENAI_API_KEY;
+    const geminiKey = /** @type {any} */ (import.meta).env.GOOGLE_GENAI_API_KEY;
     initConversation(geminiKey);
 
     // 3. Setup Runtime UI Listeners
@@ -42,8 +44,8 @@ document.addEventListener('DOMContentLoaded', () => {
  */
 function setupInterfaceControls() {
     const btnTraverse = document.getElementById('btn-traverse');
-    const inputAz = document.getElementById('input-az');
-    const inputDist = document.getElementById('input-dist');
+    const inputAz = /** @type {HTMLInputElement | null} */ (document.getElementById('input-az'));
+    const inputDist = /** @type {HTMLInputElement | null} */ (document.getElementById('input-dist'));
 
     if (btnTraverse && inputAz && inputDist) {
         btnTraverse.onclick = () => {
@@ -76,7 +78,7 @@ function setupInterfaceControls() {
 
     // 4. Sample Integration Handler for Text-Based Automated Notes Passing
     const btnProcessNote = document.getElementById('btn-process-note');
-    const txtAreaNote = document.getElementById('textarea-field-note');
+    const txtAreaNote = /** @type {HTMLTextAreaElement | null} */ (document.getElementById('textarea-field-note'));
 
     if (btnProcessNote && txtAreaNote && aiCoreInstance) {
         btnProcessNote.onclick = () => {
