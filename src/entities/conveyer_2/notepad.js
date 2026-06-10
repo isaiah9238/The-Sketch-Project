@@ -3,8 +3,9 @@
  * Handles volatile notes, visual dissolving effects, and split/merge architecture.
  */
 
-import { globalState } from '../../core/stateManager.js';
+import { globalState } from '../../turningFile.js';
 import AICore from './aiCore.js';
+import { initConversation, chat as aiChat, isGeminiAvailable } from '../../ai/conversationEngine.js';
 
 export default class Notepad {
     /**
@@ -179,12 +180,16 @@ export default class Notepad {
         if (this.isAiTyping) return; // Prevent the AI from triggering its own scanner loop
         if (this.typingTimeout) clearTimeout(this.typingTimeout);
 
-        this.typingTimeout = setTimeout(() => {
+        this.typingTimeout = setTimeout(async () => {
             if (this.content.trim().length > 10) {
                 console.log(`[Notepad AI] Sparking ideas for: ${this.id}...`);
-                // Safe execution wrapper for contextual additions
-                // const suggestion = this.aiCore.sparkIdeas(this.content);
-                // if (suggestion) this.appendChatMessage(suggestion);
+                
+                // Send through the conversation engine if AI is available
+                const response = await aiChat(this.content);
+                if (response && response.success && response.text) {
+                    const prefix = response.character === 'sketch' ? '📐' : '📝';
+                    this.appendChatMessage(`${prefix} ${response.text}`);
+                }
             }
         }, 1500);
     }

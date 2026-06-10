@@ -6,6 +6,7 @@
 import CanvasEngine from './entities/fieldbook/canvasEngine.js';
 import AICore from './entities/conveyer_2/aiCore.js';
 import { globalState } from './turningFile.js';
+import { initConversation } from './ai/conversationEngine.js';
 
 // Initialize the core processing modules
 let canvasEngineInstance = null;
@@ -26,6 +27,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 2. Initialize the automated AI processing track
     aiCoreInstance = new AICore();
+
+    // 3. Initialize the Gemini-powered conversation engine (Sketch & Notepad personas)
+    // API key is passed in — the AI modules don't know or care where it comes from
+    const geminiKey = import.meta.env.GOOGLE_GENAI_API_KEY;
+    initConversation(geminiKey);
 
     // 3. Setup Runtime UI Listeners
     setupInterfaceControls();
