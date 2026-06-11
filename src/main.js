@@ -1,12 +1,13 @@
 /**
  * Surveyor-Sketch Main Entry Point
  * Orchestrates initialization, state binding, and tool interaction loops.
- */
+/** @typedef {import('./turningFile.js').ExtractedVector} ExtractedVector */
 
 import CanvasEngine from './entities/fieldbook/canvasEngine.js';
 import AICore from './entities/conveyer_2/aiCore.js';
 import { globalState } from './turningFile.js';
 import { initConversation } from './ai/conversationEngine.js';
+import { calculateTraverse } from './entities/fieldbook/coordinateMath.js';
 
 // Initialize the core processing modules
 /** @type {CanvasEngine | null} */
@@ -51,10 +52,8 @@ function setupInterfaceControls() {
         btnTraverse.onclick = () => {
             const az = parseFloat(inputAz.value) || 0;
             const dist = parseFloat(inputDist.value) || 0;
-
             const currentPen = canvasEngineInstance ? canvasEngineInstance.pen : { x: 0, y: 0 };
-            const rad = (az * Math.PI) / 180;
-            
+                        
             // Ensure the starting point is recorded so the first traverse actually draws a line
             if (globalState.coordinates.length === 0) {
                 globalState.coordinates.push({ 
@@ -64,9 +63,10 @@ function setupInterfaceControls() {
                 });
             }
 
+            // Securely calculate the next point using your core math engine
+            const computedPoint = calculateTraverse(currentPen, az, dist);
             const nextPoint = {
-                x: currentPen.x + (dist * Math.sin(rad)),
-                y: currentPen.y + (dist * Math.cos(rad)),
+                ...computedPoint,
                 timestamp: new Date().toISOString()
             };
 
@@ -77,8 +77,8 @@ function setupInterfaceControls() {
             if (canvasEngineInstance) {
                 canvasEngineInstance.pen.x = nextPoint.x;
                 canvasEngineInstance.pen.y = nextPoint.y;
-                canvasEngineInstance.camera.x = nextPoint.x;
-                canvasEngineInstance.camera.y = nextPoint.y;
+                //canvasEngineInstance.camera.x = nextPoint.x;
+                //canvasEngineInstance.camera.y = nextPoint.y;
                 canvasEngineInstance.render();
             }
         };
@@ -92,8 +92,9 @@ function setupInterfaceControls() {
         btnProcessNote.onclick = () => {
             if (!aiCoreInstance) return;
             const rawText = txtAreaNote.value;
-            // Send user text strings directly through the AI core parsing framework safely
-            const summary = aiCoreInstance.processInput(rawText);
+            const summary = /** @type {{ extractedVectors: ExtractedVector[] }} */ (
+                aiCoreInstance.processInput(rawText)
+            );
             console.log("🤖 [AI Core Evaluation]:", summary);
             
             // Loop through any parsed vectors from the AI Core and physically draw them!
@@ -110,11 +111,11 @@ function setupInterfaceControls() {
                 }
                 
                 for (const vector of summary.extractedVectors) {
-                    const rad = (vector.azimuth * Math.PI) / 180;
+                    // Use clean coordinateMath vector addition instead of raw sin/cos multipliers
+                    const computedPoint = calculateTraverse(currentPen, vector.azimuth, vector.distance);
                     const nextPoint = {
-                        x: currentPen.x + (vector.distance * Math.sin(rad)),
-                        y: currentPen.y + (vector.distance * Math.cos(rad)),
-                        timestamp: new Date().toISOString()
+                        ...computedPoint,
+                        timestamp: vector.timestamp || new Date().toISOString()
                     };
                     
                     globalState.coordinates.push(nextPoint);
@@ -122,8 +123,6 @@ function setupInterfaceControls() {
                     if (canvasEngineInstance) {
                         canvasEngineInstance.pen.x = nextPoint.x;
                         canvasEngineInstance.pen.y = nextPoint.y;
-                        canvasEngineInstance.camera.x = nextPoint.x;
-                        canvasEngineInstance.camera.y = nextPoint.y;
                     }
                     
                     currentPen = nextPoint; // update local pointer for next vector in loop

@@ -139,7 +139,7 @@ export default class CanvasEngine {
     _renderGeometryPaths() {
         // Pull active coordinate paths straight out of your central state manager
         const currentCoordinates = globalState.coordinates;
-        if (!currentCoordinates || currentCoordinates.length < 2) return;
+        if (!currentCoordinates || currentCoordinates.length < 1) return; // Allow rendering even with 1+ points
 
         let renderCoordinates = currentCoordinates;
         if (this.morphState.active) {
@@ -150,20 +150,29 @@ export default class CanvasEngine {
             );
         }
 
-        this.ctx.lineWidth = 2;
-        this.ctx.strokeStyle = '#82ff6f'; // High-contrast Emerald Neon accent
+        // Save context state to prevent style pollution
+        this.ctx.save();
+        
+        this.ctx.lineWidth = 3;             // Slightly thicker line for high visibility
+        this.ctx.strokeStyle = '#82ff6f';   // High-contrast Emerald Neon accent
+        this.ctx.lineCap = 'round';
+        this.ctx.lineJoin = 'round';
+        
         this.ctx.beginPath();
 
-        const [firstPt, ...restPts] = renderCoordinates;
-        
-        const start = this.toScreen(firstPt.x, firstPt.y);
+        // Establish the anchor mapping
+        const start = this.toScreen(renderCoordinates[0].x, renderCoordinates[0].y);
         this.ctx.moveTo(start.x, start.y);
 
-        for (const pt of restPts) {
+        // Explicitly draw lines connecting all sequential coordinates
+        for (let i = 1; i < renderCoordinates.length; i++) {
+            const pt = renderCoordinates[i];
             const screenPt = this.toScreen(pt.x, pt.y);
             this.ctx.lineTo(screenPt.x, screenPt.y);
         }
+        
         this.ctx.stroke();
+        this.ctx.restore(); // Restore safely
     }
 
     _renderOverlays() {
