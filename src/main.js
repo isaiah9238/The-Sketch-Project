@@ -52,10 +52,18 @@ function setupInterfaceControls() {
             const az = parseFloat(inputAz.value) || 0;
             const dist = parseFloat(inputDist.value) || 0;
 
-            // Direct programmatic vector generation safely committed to state
             const currentPen = canvasEngineInstance ? canvasEngineInstance.pen : { x: 0, y: 0 };
             const rad = (az * Math.PI) / 180;
             
+            // Ensure the starting point is recorded so the first traverse actually draws a line
+            if (globalState.coordinates.length === 0) {
+                globalState.coordinates.push({ 
+                    x: currentPen.x, 
+                    y: currentPen.y, 
+                    timestamp: new Date().toISOString() 
+                });
+            }
+
             const nextPoint = {
                 x: currentPen.x + (dist * Math.sin(rad)),
                 y: currentPen.y + (dist * Math.cos(rad)),
@@ -82,6 +90,7 @@ function setupInterfaceControls() {
 
     if (btnProcessNote && txtAreaNote && aiCoreInstance) {
         btnProcessNote.onclick = () => {
+            if (!aiCoreInstance) return;
             const rawText = txtAreaNote.value;
             // Send user text strings directly through the AI core parsing framework safely
             const summary = aiCoreInstance.processInput(rawText);
@@ -90,6 +99,14 @@ function setupInterfaceControls() {
             if (canvasEngineInstance) {
                 canvasEngineInstance.render();
             }
+        };
+    }
+
+    // 5. Shape Morph Trigger
+    const btnMorph = document.getElementById('btn-morph');
+    if (btnMorph && canvasEngineInstance) {
+        btnMorph.onclick = () => {
+            canvasEngineInstance.startMorph(2500); // 2.5 second animation
         };
     }
 }

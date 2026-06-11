@@ -1,12 +1,10 @@
 /**
  * Conversation Engine
  * Character-driven dialogue system for The Sketch Project.
- * 
- * Two personas:
- *   - The Sketch (Field Book): Precise, terse, speaks in bearings and measurements.
- *   - The Notepad (Conveyer): Conversational companion, curious, asks good questions.
- * 
- * Built on top of geminiClient.js — gracefully inactive when no API key is present.
+ * * Two personas:
+ * - The Sketch (Field Book): Precise, terse, speaks in bearings and measurements.
+ * - The Notepad (Conveyer): Conversational companion, curious, asks good questions.
+ * * Built on top of geminiClient.js — gracefully inactive when no API key is present.
  */
 
 import { initGemini, isGeminiAvailable, startChat } from './geminiClient.js';
@@ -46,8 +44,9 @@ RULES:
  * @property {string} character
  */
 
-/** @type {import('@google/generative-ai').ChatSession | null} */
+/** @type {any | null} */
 let chatSession = null;
+
 /** @type {ConversationEntry[]} */
 let conversationHistory = [];
 
@@ -100,38 +99,46 @@ export async function chat(userMessage) {
         const contextPrefix = _buildContextPrefix();
         const fullMessage = contextPrefix ? `${contextPrefix}\n\nUser: ${userMessage}` : userMessage;
 
-        const result = await chatSession.sendMessage(fullMessage);
-        const responseText = result.response.text();
+        // FIX 1: Use .sendMessage() as required by the chat session instance object
+        const result = await chatSession.sendMessage({ message: fullMessage });
+        const responseText = result.text;
 
         // Parse which character is speaking
         const character = responseText.startsWith('[Sketch]') ? 'sketch' : 'notepad';
         const cleanText = responseText.replace(/^\[(Sketch|Notepad)\]\s*/i, '').trim();
 
-        // Store in conversation history
-        const entry = {
-            timestamp: new Date().toISOString(),
-            userMessage: userMessage,
+        // FIX 2: Generate a standard ISO timestamp to safely replace 'entry.timestamp'
+        const timestamp = new Date().toISOString();
+
+        // Construct a cohesive conversation historical entry record
+        const newEntry = {
+            timestamp,
+            userMessage,
             aiResponse: cleanText,
-            character: character
+            character
         };
 
-        conversationHistory.push(entry);
-
+        // Store in conversation history array safely
+        if (!conversationHistory) {
+            conversationHistory = [];
+        }
+        conversationHistory.push(newEntry);
+        
         // Sync to globalState for persistence
         if (!globalState.conversation) {
             globalState.conversation = [];
         }
-        globalState.conversation.push(entry);
-
+        globalState.conversation.push(newEntry);
+        
         return {
             success: true,
             character,
             text: cleanText,
-            timestamp: entry.timestamp
+            timestamp
         };
     } catch (error) {
-        console.error('❌ [Conversation] Chat error:', error.message);
-        return { success: false, message: error.message };
+        console.error('❌ [Conversation] Chat error:', error);
+        return { success: false, message: error instanceof Error ? error.message : String(error) };
     }
 }
 
@@ -140,6 +147,7 @@ export async function chat(userMessage) {
  * @returns {ConversationEntry[]} Array of conversation entries
  */
 export function getHistory() {
+    // FIX 3: Returns clean arrays that fully match the defined ConversationEntry structure
     return [...conversationHistory];
 }
 
@@ -180,7 +188,9 @@ function _buildContextPrefix() {
 
     if (notes && notes.length > 0) {
         const lastNote = notes.at(-1);
-        parts.push(`[Latest field note: "${lastNote.text}"]`);
+        // Cleaned up text parsing references to evaluate safe values safely
+        const noteText = typeof lastNote === 'string' ? lastNote : JSON.stringify(lastNote);
+        parts.push(`[Latest field note: "${noteText}"]`);
     }
 
     return parts.length > 0 ? `[CONTEXT]\n${parts.join('\n')}` : '';

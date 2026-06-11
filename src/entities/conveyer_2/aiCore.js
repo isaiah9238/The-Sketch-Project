@@ -28,7 +28,9 @@ export default class AICore {
 
         const result = {
             success: true,
+            /** @type {string[]} */
             actionsTriggered: [],
+            /** @type {any[]} */
             extractedCoordinates: []
         };
 

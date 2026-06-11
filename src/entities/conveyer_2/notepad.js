@@ -40,7 +40,8 @@ export default class Notepad {
 
         // Listen to changes
         this.domElement.addEventListener('input', (e) => {
-            this.content = e.target.value;
+            const target = /** @type {HTMLTextAreaElement} */ (e.target);
+            this.content = target.value;
             this._handleAutoSpark();
         });
     }

@@ -6,6 +6,17 @@
 
 import { getDistance } from './coordinateMath.js';
 import { globalState } from '../../turningFile.js';
+import { getCentroid, generateTargetCircle, generateMorphGeometry } from '../../sequences/tunnel/morphEngine.js';
+
+/**
+ * @typedef {Object} MorphState
+ * @property {boolean} active
+ * @property {number} fraction
+ * @property {import('../../turningFile.js').Coordinate[]} originalGeometry
+ * @property {import('../../turningFile.js').Coordinate[]} targetGeometry
+ * @property {number} startTime
+ * @property {number} duration
+ */
 
 export default class CanvasEngine {
     /**
@@ -15,12 +26,23 @@ export default class CanvasEngine {
         /** @type {HTMLCanvasElement} */
         this.canvas = canvasElement;
         /** @type {CanvasRenderingContext2D} */
+        // @ts-ignore
         this.ctx = canvasElement.getContext('2d');
         
         // Render Viewport Parameter Matrix
         this.camera = { x: 0, y: 0, zoom: 5 };
         this.pen = { x: 0, y: 0 };
         this.snap = { active: false, x: 0, y: 0, type: '' };
+        
+        /** @type {MorphState} */
+        this.morphState = { 
+            active: false, 
+            fraction: 0, 
+            originalGeometry: [], 
+            targetGeometry: [],
+            startTime: 0,
+            duration: 2000
+        };
         
         this.isDragging = false;
         this.lastMouseX = 0;
@@ -97,11 +119,20 @@ export default class CanvasEngine {
         const currentCoordinates = globalState.coordinates;
         if (!currentCoordinates || currentCoordinates.length < 2) return;
 
+        let renderCoordinates = currentCoordinates;
+        if (this.morphState.active) {
+            renderCoordinates = generateMorphGeometry(
+                this.morphState.originalGeometry,
+                this.morphState.targetGeometry,
+                this.morphState.fraction
+            );
+        }
+
         this.ctx.lineWidth = 2;
         this.ctx.strokeStyle = '#82ff6f'; // High-contrast Emerald Neon accent
         this.ctx.beginPath();
 
-        const [firstPt, ...restPts] = currentCoordinates;
+        const [firstPt, ...restPts] = renderCoordinates;
         
         const start = this.toScreen(firstPt.x, firstPt.y);
         this.ctx.moveTo(start.x, start.y);
@@ -119,5 +150,47 @@ export default class CanvasEngine {
         this.ctx.beginPath();
         this.ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
         this.ctx.fill();
+    }
+
+    /**
+     * Starts the animation sequence to morph the current geometry into a transit circle
+     * @param {number} duration - Time in ms for the morph to complete
+     */
+    startMorph(duration = 2000) {
+        if (!globalState.coordinates || globalState.coordinates.length < 3) {
+            console.warn("[Canvas Engine] Need at least 3 points to morph into a circle.");
+            return;
+        }
+        
+        const originalPts = [...globalState.coordinates];
+        const centroid = getCentroid(originalPts);
+        const radius = 50; 
+        
+        this.morphState = {
+            active: true,
+            fraction: 0,
+            originalGeometry: originalPts,
+            targetGeometry: generateTargetCircle(centroid, radius, originalPts.length),
+            startTime: performance.now(),
+            duration: duration
+        };
+        
+        const animate = (/** @type {number} */ time) => {
+            if (!this.morphState.active) return;
+            
+            let elapsed = time - this.morphState.startTime;
+            let progress = Math.min(elapsed / this.morphState.duration, 1);
+            
+            this.morphState.fraction = progress;
+            this.render();
+            
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            } else {
+                console.log("✨ [Morph Sequence] Transformation complete. Ready for Tunnel.");
+            }
+        };
+        
+        requestAnimationFrame(animate);
     }
 }
