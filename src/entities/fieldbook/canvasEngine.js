@@ -161,12 +161,21 @@ export default class CanvasEngine {
         this.ctx.beginPath();
 
         // Establish the anchor mapping
-        const start = this.toScreen(renderCoordinates[0].x, renderCoordinates[0].y);
+        const firstPt = renderCoordinates[0];
+        if (!firstPt || !Number.isFinite(firstPt.x) || !Number.isFinite(firstPt.y)) {
+            this.ctx.restore();
+            return; // Abort path render if anchor is invalid
+        }
+        
+        const start = this.toScreen(firstPt.x, firstPt.y);
         this.ctx.moveTo(start.x, start.y);
 
         // Explicitly draw lines connecting all sequential coordinates
         for (let i = 1; i < renderCoordinates.length; i++) {
             const pt = renderCoordinates[i];
+            if (!pt || !Number.isFinite(pt.x) || !Number.isFinite(pt.y)) {
+                continue; // Skip rendering this corrupted segment to prevent a crash
+            }
             const screenPt = this.toScreen(pt.x, pt.y);
             this.ctx.lineTo(screenPt.x, screenPt.y);
         }

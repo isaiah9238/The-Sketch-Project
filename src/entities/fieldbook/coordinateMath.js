@@ -81,6 +81,18 @@ export function getShapeArea(shape) {
  * @returns {Coordinate}
  */
 export function calculateTraverse(startPoint, azimuth, distance) {
+    // 1. Null Vector Protection
+    if (!startPoint || typeof startPoint.x !== 'number' || typeof startPoint.y !== 'number') {
+        console.error("Null or Invalid startPoint provided to traverse:", startPoint);
+        return { x: 0, y: 0 }; // Fallback to origin instead of crashing
+    }
+
+    // 2. Infinite Vector Protection
+    if (!Number.isFinite(azimuth) || !Number.isFinite(distance)) {
+        console.error("Infinite or NaN vector provided:", { azimuth, distance });
+        return { x: startPoint.x, y: startPoint.y }; // Return current position, zero movement
+    }
+
     const radians = (azimuth * Math.PI) / 180;
     return {
         x: startPoint.x + (distance * Math.sin(radians)),

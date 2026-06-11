@@ -89,10 +89,12 @@ export default class AICore {
     _parseTraverseCommand(text) {
         if (!text || typeof text !== 'string') return null;
 
+        // Split text into uppercase clean tokens
         const tokens = text.toUpperCase().replace(/[:=,;\s]/g, ' ').split(' ').filter(Boolean);
 
-        if (tokens.length === 0 || tokens.length % 2 !== 0) {
-            console.warn("Input error: Unbalanced or empty tokens.");
+        // FIXED: Removed the "% 2 !== 0" check so free-form sentences don't break the parser
+        if (tokens.length === 0) {
+            console.warn("Input error: Empty tokens.");
             return null; 
         }
 
@@ -100,15 +102,25 @@ export default class AICore {
         let azimuth = null;
         let distance = null;
 
-        for (let i = 0; i < tokens.length; i += 2) { 
-            const key = tokens[i]; 
-            const val = parseFloat(tokens[i + 1]);
+        for (let i = 0; i < tokens.length; i++) { 
+            // FIXED: Renamed this to 'token' to match your conditional blocks below
+            const token = tokens[i]; 
+        
+            if (token === 'AZ' || token === 'AZIMUTH') {
+                const nextVal = parseFloat(tokens[i + 1]);
+                if (!isNaN(nextVal)) {
+                    azimuth = nextVal;
+                    i++; // Safely skip the number token we just consumed
+                }
+            } else if (token === 'DIST' || token === 'DISTANCE') {
+                const nextVal = parseFloat(tokens[i + 1]);
+                if (!isNaN(nextVal)) {
+                    distance = nextVal;
+                    i++; // Safely skip the number token we just consumed
+                }
+            }
 
-            if (isNaN(val)) continue; 
-
-            if (key === 'AZ' || key === 'AZIMUTH') azimuth = val;
-            if (key === 'DIST' || key === 'DISTANCE') distance = val;
-
+            // Evaluate if a complete geodetic pair has been formed
             if (azimuth !== null && distance !== null) {
                 vectors.push({
                     type: 'traverse_vector',
@@ -119,7 +131,7 @@ export default class AICore {
                 azimuth = null;
                 distance = null;
             }
-        }
-        return vectors.length > 0 ? vectors : null;
+        }    
+        return vectors.length > 0 ? vectors : null;                                
     }
 }
