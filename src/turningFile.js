@@ -1,6 +1,14 @@
 /** @import { ConversationEntry } from "./ai/conversationEngine.js" */
 
 /**
+ * @typedef {Object} TraverseVector
+ * @property {string} type
+ * @property {number} azimuth
+ * @property {number} distance
+ * @property {string} timestamp
+ */
+
+/**
  * @typedef {Object} Coordinate
  * @property {number} x
  * @property {number} y
@@ -8,40 +16,26 @@
  */
 
 /**
- * @typedef {Object} FieldNote
- * @property {string} sourceId
+ * @typedef {Object} ParcelFieldNote
+ * @property {string} timestamp
+ * @property {string} parcelID
  * @property {string} text
- * @property {string} timestamp
- */
-
-/**
- * @typedef {Object} Conversation
- * @property {string} timestamp
- * @property {string} userMessage
- * @property {string} aiResponse
- * @property {string} character
- */
-
-/**
- * @typedef {Object} Entry
- * @property {string} timestamp
- * @property {string} userMessage
- * @property {string} aiResponse
- * @property {string} character
  */
 
 /**
  * @typedef {Object} AppState
- * @property {FieldNote[]} notes
- * @property {Coordinate[]} coordinates
+ * @property {TraverseVector[]} traverseVectors - To store raw parsed inputs
+ * @property {Coordinate[]} coordinates        - To store calculated/resolved points
+ * @property {ParcelFieldNote[]} notes         - To store text logs
  * @property {any[]} parcels
  * @property {ConversationEntry[]} conversation
  */
 
 /** @type {AppState} */
 export const globalState = {
-    notes: [],
+    traverseVectors: [],
     coordinates: [],
+    notes: [],
     parcels: [],
     conversation: []
 };

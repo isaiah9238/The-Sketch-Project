@@ -104,9 +104,11 @@ function setupInterfaceControls() {
 
     // 5. Shape Morph Trigger
     const btnMorph = document.getElementById('btn-morph');
-    if (btnMorph && canvasEngineInstance) {
+    if (btnMorph) {
         btnMorph.onclick = () => {
-            canvasEngineInstance.startMorph(2500); // 2.5 second animation
+            if (canvasEngineInstance) {
+                canvasEngineInstance.startMorph(2500); // 2.5 second animation
+            }
         };
     }
 }

@@ -5,6 +5,9 @@ export default class NetworkService {
     this.config = getConfig();
   }
 
+  /**
+   * @param {string} endpoint
+   */
   async fetchData(endpoint) { 
     try {       
         // Clean up any double-slash issues dynamically

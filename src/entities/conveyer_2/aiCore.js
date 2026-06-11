@@ -9,7 +9,9 @@ export default class AICore {
     constructor() {
         /** @type {boolean} */
         this.isProcessing = false;
-        /** @type {any[]} */
+        /** * Local cache of the last parsed vectors 
+         * @type {import('../../turningFile.js').TraverseVector[]} 
+         */
         this.LastExtractedPoints = [];
     }
 
@@ -30,35 +32,47 @@ export default class AICore {
             success: true,
             /** @type {string[]} */
             actionsTriggered: [],
-            /** @type {any[]} */
-            extractedCoordinates: []
+            /** @type {import('../../turningFile.js').TraverseVector[]} */
+            extractedVectors: [],
+            /** @type {import('../../turningFile.js').ParcelFieldNote[]} */
+            AppStatefieldNote: []
         };
 
         try {
-            // 1. Check for explicit Azimuth/Distance traverse shortcuts (e.g., "AZ 90 DIST 150")
+            // 1. Check for explicit Azimuth/Distance traverse shortcuts
             if (lowercaseInput.includes('az') && lowercaseInput.includes('dist')) {
                 const parsedTraverses = this._parseTraverseCommand(rawInput);
                 if (parsedTraverses && parsedTraverses.length > 0) {
                     this.LastExtractedPoints = parsedTraverses;
-                    globalState.coordinates.push(...parsedTraverses);
-                    result.extractedCoordinates.push(...parsedTraverses);
+                    
+                    // Route to raw vectors list in global state
+                    globalState.traverseVectors.push(...parsedTraverses);
+                    
+                    result.extractedVectors.push(...parsedTraverses);
                     result.actionsTriggered.push("TRAVERSE_EXTRACTION");
                 }
             }
 
             // 2. Process text to update global state notes if it's a field description
-            if (lowercaseInput.includes('parcel') || lowercaseInput.includes('boundary')) {
-                globalState.notes.push({
+            if (lowercaseInput.includes('parcel') || lowercaseInput.includes('area')) {
+                /** @type {import('../../turningFile.js').ParcelFieldNote} */
+                const newNote = {
                     timestamp: new Date().toISOString(),
-                    text: rawInput.trim()
-                });
+                    parcelID: "UNKNOWN_OR_PARSED_ID", // Replace with a real parser/string if available
+                    text: rawInput.trim(),
+                };
+
+                // Push to the newly typed globalState.notes array
+                globalState.notes.push(newNote);
+                
+                // Track it in your local function response
+                result.AppStatefieldNote.push(newNote);
                 result.actionsTriggered.push("PARCEL_NOTE_LOGGED");
             }
 
         } catch (error) {
             console.error("AI Core internal processing fault:", error);
             result.success = false;
-            result.error = error.message;
         } finally {
             this.isProcessing = false;
         }
@@ -68,14 +82,11 @@ export default class AICore {
 
     /**
      * Internal text parser to pull raw bearing/distance vectors out of free-form text strings.
-     * Built safely using strict token scanning to completely eliminate ReDoS risks.
      * @private
      * @param {string} text
-     * @returns {any[] | null}
+     * @returns {import('../../turningFile.js').TraverseVector[] | null}
      */
-    
     _parseTraverseCommand(text) {
-        
         if (!text || typeof text !== 'string') return null;
 
         const tokens = text.toUpperCase().replace(/[:=,;\s]/g, ' ').split(' ').filter(Boolean);
@@ -91,7 +102,7 @@ export default class AICore {
 
         for (let i = 0; i < tokens.length; i += 2) { 
             const key = tokens[i]; 
-            const val = parseFloat(tokens[i + 1])
+            const val = parseFloat(tokens[i + 1]);
 
             if (isNaN(val)) continue; 
 

@@ -5,7 +5,8 @@
 
 import { globalState } from '../../turningFile.js';
 import AICore from './aiCore.js';
-import { initConversation, chat as aiChat, isGeminiAvailable } from '../../ai/conversationEngine.js';
+import { initConversation, chat as aiChat } from '../../ai/conversationEngine.js';
+import { isGeminiAvailable } from '../../ai/geminiClient.js';
 
 export default class Notepad {
     /**
@@ -63,9 +64,11 @@ export default class Notepad {
             if (!keepDissolved) {
                 this.clear();
                 // Reset visuals after dissolving
-                this.domElement.style.opacity = '1';
-                this.domElement.style.filter = 'none';
-                this.domElement.style.transition = '';
+                if (this.domElement) {
+                    this.domElement.style.opacity = '1';
+                    this.domElement.style.filter = 'none';
+                    this.domElement.style.transition = '';
+                }
             }
         }, duration);
     }
@@ -138,12 +141,13 @@ export default class Notepad {
         if (!this.content.trim()) return;
 
         // Check if an entry for this specific notepad instance already exists to avoid array bloat
-        const existingNoteIdx = globalState.notes.findIndex(n => n.sourceId === this.id);
+        const existingNoteIdx = globalState.notes.findIndex(n => n.parcelID === this.id);
 
+        /** @type {import('../../turningFile.js').ParcelFieldNote} */
         const notePayload = {
             timestamp: new Date().toISOString(),
             text: this.content.trim(),
-            sourceId: this.id
+            parcelID: this.id
         };
 
         if (existingNoteIdx > -1) {
@@ -193,7 +197,7 @@ export default class Notepad {
                 console.log(`[Notepad AI] Sparking ideas for: ${this.id}...`);
                 
                 // Send through the conversation engine if AI is available
-                const response = await aiChat(this.content);
+                const response = /** @type {any} */ (await aiChat(this.content));
                 if (response && response.success && response.text) {
                     const prefix = response.character === 'sketch' ? '📐' : '📝';
                     this.appendChatMessage(`${prefix} ${response.text}`);
