@@ -181,6 +181,20 @@ export default class CanvasEngine {
         this.ctx.beginPath();
         this.ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
         this.ctx.fill();
+
+        // Draw On-Screen Diagnostic HUD
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = '12px monospace';
+        this.ctx.textAlign = 'left';
+        
+        const coords = globalState.coordinates || [];
+        this.ctx.fillText(`[SYS] Tracked Points: ${coords.length}`, 10, 20);
+        
+        if (coords.length > 0) {
+            const last = coords[coords.length - 1];
+            this.ctx.fillText(`[SYS] Pen: {x: ${this.pen.x.toFixed(2)}, y: ${this.pen.y.toFixed(2)}}`, 10, 40);
+            this.ctx.fillText(`[SYS] Last Pt: {x: ${last.x.toFixed(2)}, y: ${last.y.toFixed(2)}}`, 10, 60);
+        }
     }
 
     /**
