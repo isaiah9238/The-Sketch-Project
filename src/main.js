@@ -96,6 +96,40 @@ function setupInterfaceControls() {
             const summary = aiCoreInstance.processInput(rawText);
             console.log("🤖 [AI Core Evaluation]:", summary);
             
+            // Loop through any parsed vectors from the AI Core and physically draw them!
+            if (summary.extractedVectors && summary.extractedVectors.length > 0) {
+                let currentPen = canvasEngineInstance ? canvasEngineInstance.pen : { x: 0, y: 0 };
+                
+                // Ensure starting point is recorded
+                if (globalState.coordinates.length === 0) {
+                    globalState.coordinates.push({ 
+                        x: currentPen.x, 
+                        y: currentPen.y, 
+                        timestamp: new Date().toISOString() 
+                    });
+                }
+                
+                for (const vector of summary.extractedVectors) {
+                    const rad = (vector.azimuth * Math.PI) / 180;
+                    const nextPoint = {
+                        x: currentPen.x + (vector.distance * Math.sin(rad)),
+                        y: currentPen.y + (vector.distance * Math.cos(rad)),
+                        timestamp: new Date().toISOString()
+                    };
+                    
+                    globalState.coordinates.push(nextPoint);
+                    
+                    if (canvasEngineInstance) {
+                        canvasEngineInstance.pen.x = nextPoint.x;
+                        canvasEngineInstance.pen.y = nextPoint.y;
+                        canvasEngineInstance.camera.x = nextPoint.x;
+                        canvasEngineInstance.camera.y = nextPoint.y;
+                    }
+                    
+                    currentPen = nextPoint; // update local pointer for next vector in loop
+                }
+            }
+
             if (canvasEngineInstance) {
                 canvasEngineInstance.render();
             }

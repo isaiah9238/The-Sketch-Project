@@ -30,7 +30,7 @@ export default class CanvasEngine {
         this.ctx = canvasElement.getContext('2d');
         
         // Render Viewport Parameter Matrix
-        this.camera = { x: 0, y: 0, zoom: 5 };
+        this.camera = { x: 0, y: 0, zoom: 1.5 };
         this.pen = { x: 0, y: 0 };
         this.snap = { active: false, x: 0, y: 0, type: '' };
         
@@ -105,13 +105,35 @@ export default class CanvasEngine {
     _drawBackgroundGrid(cx, cy) {
         const step = 10;
         const zoom = this.camera.zoom;
-        if (step * zoom < 10) return;
+        if (step * zoom < 5) return;
 
         this.ctx.strokeStyle = '#1a1a1a'; // Neon terminal background accenting
         this.ctx.lineWidth = 1;
+        this.ctx.beginPath();
 
-        // Simple calculation boundary lines
-        // Grid logic loops draw dynamically using this.toScreen paths...
+        const minWorldX = this.camera.x - (cx / zoom);
+        const maxWorldX = this.camera.x + (cx / zoom);
+        const minWorldY = this.camera.y - (cy / zoom);
+        const maxWorldY = this.camera.y + (cy / zoom);
+
+        const startX = Math.floor(minWorldX / step) * step;
+        const startY = Math.floor(minWorldY / step) * step;
+
+        for (let x = startX; x <= maxWorldX; x += step) {
+            const screenPt1 = this.toScreen(x, minWorldY);
+            const screenPt2 = this.toScreen(x, maxWorldY);
+            this.ctx.moveTo(screenPt1.x, screenPt1.y);
+            this.ctx.lineTo(screenPt2.x, screenPt2.y);
+        }
+
+        for (let y = startY; y <= maxWorldY; y += step) {
+            const screenPt1 = this.toScreen(minWorldX, y);
+            const screenPt2 = this.toScreen(maxWorldX, y);
+            this.ctx.moveTo(screenPt1.x, screenPt1.y);
+            this.ctx.lineTo(screenPt2.x, screenPt2.y);
+        }
+
+        this.ctx.stroke();
     }
 
     _renderGeometryPaths() {
