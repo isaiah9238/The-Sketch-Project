@@ -117,19 +117,19 @@ export default class AICore {
                 if (!isNaN(nextVal)) {
                     distance = nextVal;
                     i++; // Safely skip the number token we just consumed
+                    
+                    // Evaluate if a complete geodetic pair has been formed right here!
+                    if (azimuth !== null && distance !== null) {
+                        vectors.push({
+                            type: 'traverse_vector',
+                            azimuth,
+                            distance,
+                            timestamp: new Date().toISOString()
+                        });
+                        azimuth = null;
+                        distance = null;
+                    }
                 }
-            }
-
-            // Evaluate if a complete geodetic pair has been formed
-            if (azimuth !== null && distance !== null) {
-                vectors.push({
-                    type: 'traverse_vector',
-                    azimuth,
-                    distance,
-                    timestamp: new Date().toISOString()
-                });
-                azimuth = null;
-                distance = null;
             }
         }    
         return vectors.length > 0 ? vectors : null;                                

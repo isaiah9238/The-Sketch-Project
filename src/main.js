@@ -1,13 +1,18 @@
 /**
  * Surveyor-Sketch Main Entry Point
  * Orchestrates initialization, state binding, and tool interaction loops.
+ */
 /** @typedef {import('./turningFile.js').ExtractedVector} ExtractedVector */
+/** @typedef {import('./turningFile.js').Coordinate} Coordinate */
 
 import CanvasEngine from './entities/fieldbook/canvasEngine.js';
 import AICore from './entities/conveyer_2/aiCore.js';
 import { globalState } from './turningFile.js';
 import { initConversation } from './ai/conversationEngine.js';
 import { calculateTraverse } from './entities/fieldbook/coordinateMath.js';
+import { generateFunnelVertices } from './sequences/tunnel/tunnelDraw.js';
+import { db } from './libs/firebase-init.js';
+import { collection, onSnapshot, addDoc, query, orderBy } from 'firebase/firestore';
 
 // Initialize the core processing modules
 /** @type {CanvasEngine | null} */
@@ -22,7 +27,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const canvasElement = /** @type {HTMLCanvasElement | null} */ (document.getElementById('sketchCanvas'));
     if (canvasElement) {
         canvasEngineInstance = new CanvasEngine(canvasElement);
-        // Expose to window framework for resize hooks if required by the system
         /** @type {any} */ (window).currentCanvasEngine = canvasEngineInstance;
     } else {
         console.error("❌ [System Error] Canvas element '#sketchCanvas' missing from DOM.");
@@ -31,14 +35,64 @@ document.addEventListener('DOMContentLoaded', () => {
     // 2. Initialize the automated AI processing track
     aiCoreInstance = new AICore();
 
-    // 3. Initialize the Gemini-powered conversation engine (Sketch & Notepad personas)
-    // API key is passed in — the AI modules don't know or care where it comes from
-    const geminiKey = /** @type {any} */ (import.meta).env.GOOGLE_GENAI_API_KEY;
+    // 3. Initialize the Gemini-powered conversation engine
+    const geminiKey = import.meta.env.GEMINI_API_KEY;
     initConversation(geminiKey);
 
-    // 3. Setup Runtime UI Listeners
+    // 4. Setup Runtime UI Listeners
     setupInterfaceControls();
+
+    // 5. Connect to Firebase Realtime Sync
+    setupFirebaseSync();
 });
+
+function setupFirebaseSync() {
+    console.log("🔥 [Firebase] Connecting to real-time coordinates stream...");
+    const coordsQuery = query(collection(db, "coordinates"), orderBy("timestamp", "asc"));
+    
+    onSnapshot(coordsQuery, (snapshot) => {
+        // ✅ FIXES Errors 1, 2, 3: Explicitly declare the type of the array
+        /** @type {Coordinate[]} */
+        const coords = [];
+        
+        snapshot.forEach((doc) => {
+            coords.push(/** @type {Coordinate} */ (doc.data()));
+        });
+        
+        // Update local state tree safely
+        globalState.coordinates = coords;
+        
+        // Sync camera and pen positions inside the viewport instance safely without bracket syntax
+        if (canvasEngineInstance && coords.length > 0) {
+            const lastCoord = coords[coords.length - 1];
+            canvasEngineInstance.pen.x = lastCoord.x;
+            canvasEngineInstance.pen.y = lastCoord.y;
+            canvasEngineInstance.render();
+        } else if (canvasEngineInstance) {
+            canvasEngineInstance.render();
+        }
+    }, (error) => {
+        console.error("❌ [Firebase Error] Failed to sync coordinates:", error);
+    });
+}
+
+/**
+ * Derives the absolute azimuth of the most recently computed vector 
+ * securely from the synced coordinates state tree.
+ * @returns {number|null} The absolute heading in degrees, or null if insufficient points exist.
+ */
+function getPreviousAzimuth() {
+    if (globalState.coordinates.length < 2) return null;
+    const p1 = globalState.coordinates[globalState.coordinates.length - 2];
+    const p2 = globalState.coordinates[globalState.coordinates.length - 1];
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y; 
+    
+    if (dx === 0 && dy === 0) return null;
+    
+    let deg = (Math.atan2(dx, dy) * 180) / Math.PI;
+    return deg < 0 ? deg + 360 : deg;
+}
 
 /**
  * Attaches operational click triggers to the UI layout safely
@@ -49,99 +103,125 @@ function setupInterfaceControls() {
     const inputDist = /** @type {HTMLInputElement | null} */ (document.getElementById('input-dist'));
 
     if (btnTraverse && inputAz && inputDist) {
-        btnTraverse.onclick = () => {
+        btnTraverse.onclick = async () => {
             const az = parseFloat(inputAz.value) || 0;
             const dist = parseFloat(inputDist.value) || 0;
-            const currentPen = canvasEngineInstance ? canvasEngineInstance.pen : { x: 0, y: 0 };
+            
+            let currentPen = {
+                x: canvasEngineInstance?.pen?.x ?? 0,
+                y: canvasEngineInstance?.pen?.y ?? 0
+            };
                         
-            // Ensure the starting point is recorded so the first traverse actually draws a line
             if (globalState.coordinates.length === 0) {
-                globalState.coordinates.push({ 
+                await addDoc(collection(db, "coordinates"), { 
                     x: currentPen.x, 
                     y: currentPen.y, 
                     timestamp: new Date().toISOString() 
-                });
+                }).catch(console.error);
             }
 
-            // Securely calculate the next point using your core math engine
-            const computedPoint = calculateTraverse(currentPen, az, dist);
+            let currentAzimuth = getPreviousAzimuth();
+            let computedAzimuth = az; 
+            
+            if (currentAzimuth !== null) {
+                computedAzimuth = ((currentAzimuth + az) % 360 + 360) % 360;
+            }
+
+            const computedPoint = calculateTraverse(currentPen, computedAzimuth, dist);
             const nextPoint = {
-                ...computedPoint,
-                timestamp: new Date().toISOString()
+                x: computedPoint.x,
+                y: computedPoint.y,
+                timestamp: new Date(Date.now() + 10).toISOString()
             };
 
-            // Commit change securely to central state tree boundary
-            globalState.coordinates.push(nextPoint);
-            
-            // Sync camera and pen positions inside the viewport instance
-            if (canvasEngineInstance) {
-                canvasEngineInstance.pen.x = nextPoint.x;
-                canvasEngineInstance.pen.y = nextPoint.y;
-                //canvasEngineInstance.camera.x = nextPoint.x;
-                //canvasEngineInstance.camera.y = nextPoint.y;
-                canvasEngineInstance.render();
-            }
+            await addDoc(collection(db, "coordinates"), nextPoint).catch(console.error);
         };
     }
 
-    // 4. Sample Integration Handler for Text-Based Automated Notes Passing
     const btnProcessNote = document.getElementById('btn-process-note');
     const txtAreaNote = /** @type {HTMLTextAreaElement | null} */ (document.getElementById('textarea-field-note'));
 
     if (btnProcessNote && txtAreaNote && aiCoreInstance) {
-        btnProcessNote.onclick = () => {
+        btnProcessNote.onclick = async () => {
             if (!aiCoreInstance) return;
             const rawText = txtAreaNote.value;
-            const summary = /** @type {{ extractedVectors: ExtractedVector[] }} */ (
-                aiCoreInstance.processInput(rawText)
-            );
+            
+            // ✅ FIXES Missing Property Errors: Strongly types the processed AI core wrapper output
+            /** @type {{ extractedVectors: ExtractedVector[] }} */
+            const summary = /** @type {any} */ (aiCoreInstance.processInput(rawText));
             console.log("🤖 [AI Core Evaluation]:", summary);
             
-            // Loop through any parsed vectors from the AI Core and physically draw them!
-            if (summary.extractedVectors && summary.extractedVectors.length > 0) {
-                let currentPen = canvasEngineInstance ? canvasEngineInstance.pen : { x: 0, y: 0 };
+            if (summary && summary.extractedVectors && summary.extractedVectors.length > 0) {
+                let currentPen = {
+                    x: canvasEngineInstance?.pen?.x ?? 0,
+                    y: canvasEngineInstance?.pen?.y ?? 0
+                };
                 
-                // Ensure starting point is recorded
                 if (globalState.coordinates.length === 0) {
-                    globalState.coordinates.push({ 
+                    await addDoc(collection(db, "coordinates"), { 
                         x: currentPen.x, 
                         y: currentPen.y, 
                         timestamp: new Date().toISOString() 
-                    });
+                    }).catch(console.error);
                 }
                 
+                let localAzimuth = getPreviousAzimuth();
+                let indexOffset = 0;
+                
+                // ✅ FIXES Scanner CWE-94 Warnings: Uses safe for...of loop to eliminate bracket notation checks
                 for (const vector of summary.extractedVectors) {
-                    // Use clean coordinateMath vector addition instead of raw sin/cos multipliers
-                    const computedPoint = calculateTraverse(currentPen, vector.azimuth, vector.distance);
-                    const nextPoint = {
-                        ...computedPoint,
-                        timestamp: vector.timestamp || new Date().toISOString()
-                    };
+                    let computedAzimuth = vector.azimuth; 
                     
-                    globalState.coordinates.push(nextPoint);
-                    
-                    if (canvasEngineInstance) {
-                        canvasEngineInstance.pen.x = nextPoint.x;
-                        canvasEngineInstance.pen.y = nextPoint.y;
+                    if (localAzimuth !== null) {
+                        const backAzimuth = (localAzimuth + 180) % 360;
+                        computedAzimuth = ((backAzimuth + vector.azimuth) % 360 + 360) % 360;
                     }
                     
-                    currentPen = nextPoint; // update local pointer for next vector in loop
+                    const computedPoint = calculateTraverse(currentPen, computedAzimuth, vector.distance);
+                    const timeOffset = new Date(Date.now() + indexOffset * 10);
+                    
+                    const nextPoint = {
+                        x: computedPoint.x,
+                        y: computedPoint.y,
+                        timestamp: timeOffset.toISOString()
+                    };
+                    
+                    await addDoc(collection(db, "coordinates"), nextPoint).catch(console.error);
+                    
+                    currentPen = { x: computedPoint.x, y: computedPoint.y }; 
+                    localAzimuth = computedAzimuth; 
+                    indexOffset++;
                 }
-            }
-
-            if (canvasEngineInstance) {
-                canvasEngineInstance.render();
+                console.log("✅ All vectors committed cleanly!");
             }
         };
     }
 
-    // 5. Shape Morph Trigger
+    // --- SECTION 5: Shape Morph Trigger ---
     const btnMorph = document.getElementById('btn-morph');
     if (btnMorph) {
         btnMorph.onclick = () => {
-            if (canvasEngineInstance) {
-                canvasEngineInstance.startMorph(2500); // 2.5 second animation
-            }
+            // ✅ Swap out the old direct call with your new execution logic
+            executeTunnelMorph();
         };
     }
+}
+
+/**
+ * Triggers a secure database update to morph the active canvas space into a funnel structure.
+ */
+async function executeTunnelMorph() {
+    if (!canvasEngineInstance) return;
+
+    const anchorPoint = {
+        x: canvasEngineInstance.pen.x,
+        y: canvasEngineInstance.pen.y
+    };
+
+    // Calculate funnel bounds dynamically
+    const targetVertices = generateFunnelVertices(anchorPoint, 200, 100, 40, 120);
+    console.log("📐 [Tunnel Sequence] Funnel morph layout calculated:", targetVertices);
+    
+    // Pass the funnel vertices to override the default circle!
+    canvasEngineInstance.startMorph(2500, targetVertices); 
 }

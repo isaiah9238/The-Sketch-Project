@@ -170,7 +170,6 @@ export default class CanvasEngine {
         const start = this.toScreen(firstPt.x, firstPt.y);
         this.ctx.moveTo(start.x, start.y);
 
-        // Explicitly draw lines connecting all sequential coordinates
         for (let i = 1; i < renderCoordinates.length; i++) {
             const pt = renderCoordinates[i];
             if (!pt || !Number.isFinite(pt.x) || !Number.isFinite(pt.y)) {
@@ -178,6 +177,14 @@ export default class CanvasEngine {
             }
             const screenPt = this.toScreen(pt.x, pt.y);
             this.ctx.lineTo(screenPt.x, screenPt.y);
+        }
+        
+        // If the original coordinates formed a closed loop, or if we are morphing, close the gap!
+        const origLast = currentCoordinates[currentCoordinates.length - 1];
+        const isClosedLoop = Math.abs(firstPt.x - origLast.x) < 0.1 && Math.abs(firstPt.y - origLast.y) < 0.1;
+        
+        if (isClosedLoop || this.morphState.active) {
+            this.ctx.closePath();
         }
         
         this.ctx.stroke();
@@ -207,12 +214,13 @@ export default class CanvasEngine {
     }
 
     /**
-     * Starts the animation sequence to morph the current geometry into a transit circle
+     * Starts the animation sequence to morph the current geometry into a target shape.
      * @param {number} duration - Time in ms for the morph to complete
+     * @param {import('../../turningFile.js').Coordinate[] | null} customTargetGeometry - Optional pre-computed geometry
      */
-    startMorph(duration = 2000) {
+    startMorph(duration = 2000, customTargetGeometry = null) {
         if (!globalState.coordinates || globalState.coordinates.length < 3) {
-            console.warn("[Canvas Engine] Need at least 3 points to morph into a circle.");
+            console.warn("[Canvas Engine] Need at least 3 points to morph.");
             return;
         }
         
@@ -224,7 +232,7 @@ export default class CanvasEngine {
             active: true,
             fraction: 0,
             originalGeometry: originalPts,
-            targetGeometry: generateTargetCircle(centroid, radius, originalPts.length),
+            targetGeometry: customTargetGeometry || generateTargetCircle(centroid, radius, originalPts.length),
             startTime: performance.now(),
             duration: duration
         };
