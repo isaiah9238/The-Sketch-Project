@@ -12,7 +12,7 @@ import { initConversation } from './ai/conversationEngine.js';
 import { calculateTraverse } from './entities/fieldbook/coordinateMath.js';
 import { generateFunnelVertices } from './sequences/tunnel/tunnelDraw.js';
 import { db } from './libs/firebase-init.js';
-import { collection, onSnapshot, addDoc, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc, getDocs, doc, deleteDoc, query, orderBy } from 'firebase/firestore';
 
 // Initialize the core processing modules
 /** @type {CanvasEngine | null} */
@@ -144,6 +144,17 @@ function setupInterfaceControls() {
     if (btnProcessNote && txtAreaNote && aiCoreInstance) {
         btnProcessNote.onclick = async () => {
             if (!aiCoreInstance) return;
+            // 1. Wipe the cloud database clean
+            const oldDocs = await getDocs(collection(db, "coordinates"));
+            for (const docRef of oldDocs.docs) {
+                await deleteDoc(doc(db, "coordinates", docRef.id));
+            }
+            
+            // 2. ✅ Reset the local canvas engine so it starts fresh at center grid
+            if (canvasEngineInstance) {
+                globalState.coordinates = []; // Clear local state array
+                canvasEngineInstance.pen = { x: 0, y: 0 }; // Reset drawing pen anchor
+            }
             const rawText = txtAreaNote.value;
             
             // ✅ FIXES Missing Property Errors: Strongly types the processed AI core wrapper output
@@ -165,17 +176,11 @@ function setupInterfaceControls() {
                     }).catch(console.error);
                 }
                 
-                let localAzimuth = getPreviousAzimuth();
-                let indexOffset = 0;
+                let indexOffset = 1;
                 
                 // ✅ FIXES Scanner CWE-94 Warnings: Uses safe for...of loop to eliminate bracket notation checks
                 for (const vector of summary.extractedVectors) {
-                    let computedAzimuth = vector.azimuth; 
-                    
-                    if (localAzimuth !== null) {
-                        const backAzimuth = (localAzimuth + 180) % 360;
-                        computedAzimuth = ((backAzimuth + vector.azimuth) % 360 + 360) % 360;
-                    }
+                    let computedAzimuth = vector.azimuth; // Use absolute heading directly
                     
                     const computedPoint = calculateTraverse(currentPen, computedAzimuth, vector.distance);
                     const timeOffset = new Date(Date.now() + indexOffset * 10);
@@ -201,8 +206,25 @@ function setupInterfaceControls() {
     const btnMorph = document.getElementById('btn-morph');
     if (btnMorph) {
         btnMorph.onclick = () => {
-            // ✅ Swap out the old direct call with your new execution logic
             executeTunnelMorph();
+        };
+    }
+
+    const btnClear = document.getElementById('btn-clear');
+    if (btnClear) {
+        btnClear.onclick = async () => {
+            console.log("⚠️ [System] Wiping all coordinates from Firebase...");
+            const q = query(collection(db, "coordinates"));
+            const snapshot = await getDocs(q);
+            
+            const deletePromises = snapshot.docs.map(doc => deleteDoc(doc.ref));
+            await Promise.all(deletePromises);
+            
+            if (canvasEngineInstance) {
+                canvasEngineInstance.pen = { x: 0, y: 0 };
+                canvasEngineInstance.morphState.active = false;
+                console.log("✅ [System] Data wipe complete!");
+            }
         };
     }
 }
