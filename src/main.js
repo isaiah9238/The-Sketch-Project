@@ -163,26 +163,28 @@ function setupInterfaceControls() {
             console.log("🤖 [AI Core Evaluation]:", summary);
             
             if (summary && summary.extractedVectors && summary.extractedVectors.length > 0) {
-                let currentPen = {
+                // 1. Establish an absolute local anchor that background listeners can't touch during execution
+                let localTrackingPen = {
                     x: canvasEngineInstance?.pen?.x ?? 0,
                     y: canvasEngineInstance?.pen?.y ?? 0
                 };
                 
                 if (globalState.coordinates.length === 0) {
                     await addDoc(collection(db, "coordinates"), { 
-                        x: currentPen.x, 
-                        y: currentPen.y, 
+                        x: localTrackingPen.x, 
+                        y: localTrackingPen.y, 
                         timestamp: new Date().toISOString() 
                     }).catch(console.error);
                 }
                 
-                let indexOffset = 1;
+                let indexOffset = 1; // Start your timestamp spacing clean
                 
                 // ✅ FIXES Scanner CWE-94 Warnings: Uses safe for...of loop to eliminate bracket notation checks
                 for (const vector of summary.extractedVectors) {
                     let computedAzimuth = vector.azimuth; // Use absolute heading directly
                     
-                    const computedPoint = calculateTraverse(currentPen, computedAzimuth, vector.distance);
+                    // 2. Pass the local tracking pen into your calculator instead of currentPen
+                    const computedPoint = calculateTraverse(localTrackingPen, computedAzimuth, vector.distance);
                     const timeOffset = new Date(Date.now() + indexOffset * 10);
                     
                     const nextPoint = {
@@ -193,9 +195,14 @@ function setupInterfaceControls() {
                     
                     await addDoc(collection(db, "coordinates"), nextPoint).catch(console.error);
                     
-                    currentPen = { x: computedPoint.x, y: computedPoint.y }; 
-                    localAzimuth = computedAzimuth; 
+                    // 3. Advance the local tracking pen to the new node sequentially
+                    localTrackingPen = { x: computedPoint.x, y: computedPoint.y }; 
                     indexOffset++;
+                }
+                
+                // 4. Once the loop finishes, update the global engine pen state exactly once
+                if (canvasEngineInstance) {
+                    canvasEngineInstance.pen = { x: localTrackingPen.x, y: localTrackingPen.y };
                 }
                 console.log("✅ All vectors committed cleanly!");
             }
