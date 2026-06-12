@@ -213,15 +213,33 @@ function setupInterfaceControls() {
 async function executeTunnelMorph() {
     if (!canvasEngineInstance) return;
 
+    // Use the last recorded point in globalState as our anchor point
+    const pointsLength = globalState.coordinates.length;
+    if (pointsLength === 0) return;
+    
     const anchorPoint = {
-        x: canvasEngineInstance.pen.x,
-        y: canvasEngineInstance.pen.y
+        x: globalState.coordinates[pointsLength - 1].x,
+        y: globalState.coordinates[pointsLength - 1].y
     };
 
-    // Calculate funnel bounds dynamically
+    // 1. Calculate your custom 6-vertex structural funnel array
     const targetVertices = generateFunnelVertices(anchorPoint, 200, 100, 40, 120);
     console.log("📐 [Tunnel Sequence] Funnel morph layout calculated:", targetVertices);
     
-    // Pass the funnel vertices to override the default circle!
+    // 2. Commit the new geometric target state tree to Firebase sequentially
+    for (let i = 0; i < targetVertices.length; i++) {
+        const vertex = targetVertices[i];
+        const timeOffset = new Date(Date.now() + i * 10); // Offset timestamps to prevent collision
+        
+        const nextPoint = {
+            x: vertex.x,
+            y: vertex.y,
+            timestamp: timeOffset.toISOString()
+        };
+        
+        await addDoc(collection(db, "coordinates"), nextPoint).catch(console.error);
+    }
+
+    // 3. Fire the local canvas engine interpolation animation with our target data
     canvasEngineInstance.startMorph(2500, targetVertices); 
 }
