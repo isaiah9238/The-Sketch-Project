@@ -76,9 +76,14 @@ export function Surveyor3DCanvas() {
                 <div>Status: <span style={{ color: morphActive ? '#82ff6f' : '#00ffcc' }}>{morphActive ? "CORRIDOR ACTIVE" : "DRAFTING FIELD"}</span></div>
                 <div>System: <span style={{ color: '#82ff6f' }}>R3F + Three.js</span></div>
                 <div style={{ fontSize: '10px', color: '#888', marginTop: '6px' }}>
-                    * Left-Click + Drag to Orbit<br/>
-                    * Right-Click + Drag to Pan<br/>
-                    * Scroll to Zoom
+                    <strong>🖱️ MOUSE:</strong><br/>
+                    * Left-Click + Drag: Orbit<br/>
+                    * Right-Click + Drag: Pan<br/>
+                    * Scroll Wheel: Zoom<br/>
+                    <strong style={{ display: 'block', marginTop: '4px' }}>💻 TOUCHPAD:</strong><br/>
+                    * One-Finger Drag: Orbit<br/>
+                    * Shift + Drag: Pan (Easy!)<br/>
+                    * Two-Finger Swipe/Pinch: Zoom
                 </div>
             </div>
         </div>
