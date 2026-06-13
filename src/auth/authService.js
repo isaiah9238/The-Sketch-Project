@@ -10,7 +10,7 @@ export async function handleGoogleLogin() {
     return {
       uid: user.uid,
       email: user.email,
-      displayName: user.displayName,
+      displayName: user.displayName || user.email || "Surveyor",
       photoURL: user.photoURL,
     };
   } catch (error) {

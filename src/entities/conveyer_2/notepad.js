@@ -160,10 +160,10 @@ export default class Notepad {
     /**
      * Process current content through the AI Core
      */
-    processContent() {
+    async processContent() {
         if (!this.content.trim()) return null;
         this._commitToState();
-        return this.aiCore.processInput(this.content);
+        return await this.aiCore.processInput(this.content);
     }
 
     /**

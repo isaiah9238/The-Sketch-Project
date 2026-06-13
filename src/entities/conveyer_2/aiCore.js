@@ -4,6 +4,7 @@
  */
 
 import { globalState } from '../../turningFile.js';
+import { aiModel } from '../../libs/firebase-init.js';
 
 export default class AICore {
     constructor() {
@@ -18,9 +19,9 @@ export default class AICore {
     /**
      * Main entry point to process inbound raw text, note strings, or script commands.
      * @param {string} rawInput 
-     * @returns {Object} Operational summary of what was parsed and updated
+     * @returns {Promise<Object>} Operational summary of what was parsed and updated
      */
-    processInput(rawInput) {
+    async processInput(rawInput) {
         if (!rawInput || typeof rawInput !== 'string') {
             return { success: false, message: "Invalid or empty input text." };
         }
@@ -39,21 +40,54 @@ export default class AICore {
         };
 
         try {
-            // 1. Check for explicit Azimuth/Distance traverse shortcuts
-            if (lowercaseInput.includes('az') && lowercaseInput.includes('dist')) {
-                const parsedTraverses = this._parseTraverseCommand(rawInput);
-                if (parsedTraverses && parsedTraverses.length > 0) {
-                    this.LastExtractedPoints = parsedTraverses;
-                    
-                    // Route to raw vectors list in global state
-                    globalState.traverseVectors.push(...parsedTraverses);
-                    
-                    result.extractedVectors.push(...parsedTraverses);
-                    result.actionsTriggered.push("TRAVERSE_EXTRACTION");
+            /** @type {import('../../turningFile.js').TraverseVector[]} */
+            let parsedTraverses = [];
+            let aiSuccess = false;
+
+            // 1. Attempt to extract traverse vectors using Firebase AI Logic (Gemini)
+            try {
+                console.log("🤖 [AI Core] Sending input to Gemini for structured traverse extraction...");
+                const responseResult = await aiModel.generateContent(rawInput);
+                const responseText = responseResult.response.text();
+                console.log("🤖 [AI Core] Gemini response:", responseText);
+
+                if (responseText) {
+                    const parsedJson = JSON.parse(responseText);
+                    if (Array.isArray(parsedJson) && parsedJson.length > 0) {
+                        parsedTraverses = parsedJson.map(item => ({
+                            type: 'traverse_vector',
+                            azimuth: Number(item.azimuth),
+                            distance: Number(item.distance),
+                            timestamp: new Date().toISOString()
+                        })).filter(vec => !isNaN(vec.azimuth) && !isNaN(vec.distance));
+
+                        if (parsedTraverses.length > 0) {
+                            aiSuccess = true;
+                            result.actionsTriggered.push("AI_TRAVERSE_EXTRACTION");
+                        }
+                    }
+                }
+            } catch (aiError) {
+                console.warn("⚠️ [AI Core] Firebase AI Logic extraction failed or offline, falling back to manual parser:", aiError);
+            }
+
+            // 2. Fallback to manual string parser if Gemini failed or returned no vectors
+            if (!aiSuccess) {
+                const manualTraverses = this._parseTraverseCommand(rawInput);
+                if (manualTraverses && manualTraverses.length > 0) {
+                    parsedTraverses = manualTraverses;
+                    result.actionsTriggered.push("MANUAL_TRAVERSE_EXTRACTION");
                 }
             }
 
-            // 2. Process text to update global state notes if it's a field description
+            // Update state and results if vectors were successfully found
+            if (parsedTraverses && parsedTraverses.length > 0) {
+                this.LastExtractedPoints = parsedTraverses;
+                globalState.traverseVectors.push(...parsedTraverses);
+                result.extractedVectors.push(...parsedTraverses);
+            }
+
+            // 3. Process text to update global state notes if it's a field description
             if (lowercaseInput.includes('parcel') || lowercaseInput.includes('area')) {
                 /** @type {import('../../turningFile.js').ParcelFieldNote} */
                 const newNote = {

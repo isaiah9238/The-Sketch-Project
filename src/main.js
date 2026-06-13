@@ -15,6 +15,7 @@ import { db, auth } from './libs/firebase-init.js';
 import { collection, onSnapshot, addDoc, getDocs, doc, deleteDoc, query, orderBy } from 'firebase/firestore';
 import { handleGoogleLogin, handleLogout } from './auth/authService.js';
 import { onAuthStateChanged } from 'firebase/auth';
+import { mount3D } from './UI/3D/mount3D.js';
 
 // Initialize the core processing modules
 /** @type {CanvasEngine | null} */
@@ -37,6 +38,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     } else {
         console.error("❌ [System Error] Canvas element '#sketchCanvas' missing from DOM.");
+    }
+
+    // 1.2 Mount the R3F 3D spatial visualizer side-by-side
+    try {
+        mount3D('canvas3D');
+    } catch (error) {
+        console.error("❌ [System Error] Failed to mount 3D Canvas visualizer:", error);
     }
     
     // --- SECTION 1.5: Authentication State Management ---
@@ -61,10 +69,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     onAuthStateChanged(auth, (user) => {
         if (user) {
-            console.log("✅ User authenticated:", user.displayName);
+            const displayName = user.displayName || user.email || "Surveyor";
+            console.log("✅ User authenticated:", displayName);
             globalState.user = { uid: user.uid, email: user.email, displayName: user.displayName };
             
-            if (userInfo) userInfo.textContent = `Logged in: ${user.displayName}`;
+            if (userInfo) userInfo.textContent = `Logged in: ${displayName}`;
             if (btnLogin) btnLogin.style.display = 'none';
             if (btnLogout) btnLogout.style.display = 'block';
         } else {
@@ -201,7 +210,7 @@ function setupInterfaceControls() {
             
             // ✅ FIXES Missing Property Errors: Strongly types the processed AI core wrapper output
             /** @type {{ extractedVectors: ExtractedVector[] }} */
-            const summary = /** @type {any} */ (aiCoreInstance.processInput(rawText));
+            const summary = /** @type {any} */ (await aiCoreInstance.processInput(rawText));
             console.log("🤖 [AI Core Evaluation]:", summary);
             
             if (summary && summary.extractedVectors && summary.extractedVectors.length > 0) {

@@ -33,8 +33,8 @@
 /**
  * @typedef {Object} UserSession
  * @property {string} uid
- * @property {string} email
- * @property {string} displayName
+ * @property {string | null} email
+ * @property {string | null} displayName
  */
 
 /**
@@ -80,7 +80,7 @@ class StateStore {
      * @param {Partial<AppState>} partialState 
      */
     setState(partialState) {
-        this.state = { ...this.state, ...partialState };
+        Object.assign(this.state, partialState);
         this.listeners.forEach(cb => cb(this.state));
     }
 }
@@ -92,10 +92,11 @@ export const stateManager = new StateStore();
  * Mutating globalState.propertyName = value automatically triggers subscriber updates.
  * @type {AppState} 
  */
-export const globalState = new Proxy(stateManager.state, {
-    get: (target, prop) => stateManager.state[prop],
+export const globalState = new Proxy(/** @type {any} */ (stateManager.state), {
+    get: (target, prop) => target[prop],
     set: (target, prop, value) => {
-        stateManager.setState({ [prop]: value });
+        target[prop] = value;
+        stateManager.listeners.forEach(cb => cb(stateManager.state));
         return true;
     }
 });
