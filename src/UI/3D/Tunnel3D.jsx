@@ -14,6 +14,7 @@ export function Tunnel3D() {
     const points3D = use3DCoordinates(5.0); // Procedural elevation spacing to spiral upward!
     const { active: morphActive, fraction: morphFraction } = use3DMorphState();
     
+    /** @type {React.MutableRefObject<any>} */
     const travelerRef = useRef(null);
     const [travelProgress, setTravelProgress] = useState(0);
 

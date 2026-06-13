@@ -15,7 +15,7 @@ import { db, auth } from './libs/firebase-init.js';
 import { collection, onSnapshot, addDoc, getDocs, doc, deleteDoc, query, orderBy } from 'firebase/firestore';
 import { handleGoogleLogin, handleLogout } from './auth/authService.js';
 import { onAuthStateChanged } from 'firebase/auth';
-import { mount3D } from './UI/3D/mount3D.js';
+import { mount3D } from './UI/3D/mount3D.jsx';
 
 // Initialize the core processing modules
 /** @type {CanvasEngine | null} */
