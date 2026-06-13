@@ -47,11 +47,15 @@
     </div>
 
     <div id="canvas-container">
-        <div id="canvas2d-slot" style="flex: 1; position: relative; height: 100%;">
-            <canvas id="sketchCanvas"></canvas>
-        </div>
-        <div id="canvas3d-slot" style="flex: 1; position: relative; height: 100%; border-left: 1px solid var(--border);">
-            <div id="canvas3D" style="width: 100%; height: 100%;"></div>
+        <canvas id="sketchCanvas"></canvas>
+        <div id="canvas3d-pip" class="pip-compact">
+            <div id="pip-header">
+                <span>🛰️ SURVEYOR-3D VIEW</span>
+                <button id="btn-pip-toggle" title="Expand View">⤢</button>
+            </div>
+            <div id="canvas3D-container">
+                <div id="canvas3D"></div>
+            </div>
         </div>
     </div>
 
