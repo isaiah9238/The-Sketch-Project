@@ -7,12 +7,14 @@
 
 import CanvasEngine from './entities/fieldbook/canvasEngine.js';
 import AICore from './entities/conveyer_2/aiCore.js';
-import { globalState } from './turningFile.js';
+import { globalState, stateManager } from './turningFile.js';
 import { initConversation } from './ai/conversationEngine.js';
 import { calculateTraverse } from './entities/fieldbook/coordinateMath.js';
 import { generateFunnelVertices } from './sequences/tunnel/tunnelDraw.js';
-import { db } from './libs/firebase-init.js';
+import { db, auth } from './libs/firebase-init.js';
 import { collection, onSnapshot, addDoc, getDocs, doc, deleteDoc, query, orderBy } from 'firebase/firestore';
+import { handleGoogleLogin, handleLogout } from './auth/authService.js';
+import { onAuthStateChanged } from 'firebase/auth';
 
 // Initialize the core processing modules
 /** @type {CanvasEngine | null} */
@@ -28,9 +30,52 @@ document.addEventListener('DOMContentLoaded', () => {
     if (canvasElement) {
         canvasEngineInstance = new CanvasEngine(canvasElement);
         /** @type {any} */ (window).currentCanvasEngine = canvasEngineInstance;
+        
+        // Connect the visual engine to the central reactive state!
+        stateManager.subscribe(() => {
+            if (canvasEngineInstance) canvasEngineInstance.render();
+        });
     } else {
         console.error("❌ [System Error] Canvas element '#sketchCanvas' missing from DOM.");
     }
+    
+    // --- SECTION 1.5: Authentication State Management ---
+    const btnLogin = document.getElementById('btn-login');
+    const btnLogout = document.getElementById('btn-logout');
+    const userInfo = document.getElementById('user-info');
+
+    if (btnLogin) {
+        btnLogin.onclick = async () => {
+            try {
+                await handleGoogleLogin();
+            } catch (err) {
+                console.error("Login attempt failed:", err);
+            }
+        };
+    }
+    if (btnLogout) {
+        btnLogout.onclick = async () => {
+            await handleLogout();
+        };
+    }
+
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            console.log("✅ User authenticated:", user.displayName);
+            globalState.user = { uid: user.uid, email: user.email, displayName: user.displayName };
+            
+            if (userInfo) userInfo.textContent = `Logged in: ${user.displayName}`;
+            if (btnLogin) btnLogin.style.display = 'none';
+            if (btnLogout) btnLogout.style.display = 'block';
+        } else {
+            console.log("🔒 User logged out");
+            globalState.user = null;
+            
+            if (userInfo) userInfo.textContent = "Not logged in";
+            if (btnLogin) btnLogin.style.display = 'block';
+            if (btnLogout) btnLogout.style.display = 'none';
+        }
+    });
 
     // 2. Initialize the automated AI processing track
     aiCoreInstance = new AICore();
@@ -59,7 +104,7 @@ function setupFirebaseSync() {
             coords.push(/** @type {Coordinate} */ (doc.data()));
         });
         
-        // Update local state tree safely
+        // Update local state tree safely. This natively triggers the reactive Proxy and notifies the Canvas Engine!
         globalState.coordinates = coords;
         
         // Sync camera and pen positions inside the viewport instance safely without bracket syntax
@@ -67,9 +112,6 @@ function setupFirebaseSync() {
             const lastCoord = coords[coords.length - 1];
             canvasEngineInstance.pen.x = lastCoord.x;
             canvasEngineInstance.pen.y = lastCoord.y;
-            canvasEngineInstance.render();
-        } else if (canvasEngineInstance) {
-            canvasEngineInstance.render();
         }
     }, (error) => {
         console.error("❌ [Firebase Error] Failed to sync coordinates:", error);
