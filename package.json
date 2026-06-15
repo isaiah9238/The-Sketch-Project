@@ -11,22 +11,22 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
-    "@types/three": "^0.184.1",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "@types/three": "0.184.1",
     "typescript": "6.0.3",
     "vite": "8.0.16"
   },
   "dependencies": {
-    "@google/genai": "^2.8.0",
-    "@react-three/drei": "^10.7.7",
-    "@react-three/fiber": "^9.6.1",
-    "firebase": "^12.14.0",
+    "@google/genai": "2.8.0",
+    "@react-three/drei": "10.7.7",
+    "@react-three/fiber": "9.6.1",
+    "firebase": "12.14.0",
     "jiti": "2.7.0",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
     "stylus": "0.64.0",
-    "three": "^0.184.0"
+    "three": "0.184.0"
   },
-  "packageManager": "pnpm@11.5.3+sha512.7ac1c919341c213a34dc0d02afb7143c5c26ac26ee8c4782deea821b8ac64d2134a081fd8941dae6e29bbb48f58dfc2b7fbceeccc07cb2f09d219d342a4969ed"
+  "packageManager": "pnpm@1.6.0"
 }

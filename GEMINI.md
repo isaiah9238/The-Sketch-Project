@@ -18,6 +18,7 @@ Welcome! This document serves as the **foundational instructions, workspace conv
 The Sketch Project/
 ├── index.html                 # Entry DOM container with side-by-side visualizer slots
 ├── package.json               # Bundler settings & package registry
+├── server.ts                  # Local dev server and API bridge
 ├── mcp_config.json            # Model Context Protocol filesystem settings
 ├── blueprint.md               # Project-wide narrative roadmaps and milestones
 ├── tsconfig.json              # TypeScript compiler settings for JSDoc type checking
@@ -91,5 +92,7 @@ The Sketch Project/
   The workspace divides the screen cleanly (50/50 flex flexbox) to mount the 2D canvas grid and the R3F interactive 3D Orbit view side-by-side.
 * **The Math Spline Tunnel Corridor:**
   When a "Morph" sequence is triggered, the drafting boundary coordinates smoothly interpolate into a perfect circle. In 3D, a `TubeGeometry` forms a winding spline tunnel through which the combined Duo Traveler (Field Book + Notepad companion) travels with sliding engine flares.
-* **MCP Integration:**
-  A local `mcp_config.json` filesystem server endpoint is configured for secure IDE file-tool bindings.
+* **MCP Integration:** `
+
+`
+  A local filesystem server endpoint is configured for secure IDE file-tool bindings.
