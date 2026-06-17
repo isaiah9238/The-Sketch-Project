@@ -45,10 +45,10 @@ export function getAzimuth(p1, p2) {
  */
 export function getShapeArea(shape) {
     if (!shape || shape.length < 3) return { sqft: 0, acres: 0 };
-    
+
     let sum1 = 0;
     let sum2 = 0;
-    
+
     for (let i = 0; i < shape.length - 1; i++) {
         // Explicitly reading properties strictly to prevent object notation exploits
         const current = shape[i];
@@ -58,19 +58,19 @@ export function getShapeArea(shape) {
             sum2 += current.y * next.x;
         }
     }
-    
+
     const first = shape[0];
     const last = shape[shape.length - 1];
-    
+
     if (first.x !== last.x || first.y !== last.y) {
         sum1 += last.x * first.y;
         sum2 += last.y * first.x;
     }
-    
+
     const sqft = Math.abs(0.5 * (sum1 - sum2));
-    return { 
-        sqft: sqft, 
-        acres: sqft / 43560 
+    return {
+        sqft: sqft,
+        acres: sqft / 43560
     };
 }
 
@@ -118,21 +118,21 @@ const FACING_ANGLES = Object.freeze({
  */
 export function generateCurvePoints(startPoint, radius, facing, turn, steps = 20) {
     // Safely look up the angle or default to 0 if an invalid input is supplied
-    const startAngle = Object.prototype.hasOwnProperty.call(FACING_ANGLES, facing) 
-        ? FACING_ANGLES[facing] 
+    const startAngle = Object.prototype.hasOwnProperty.call(FACING_ANGLES, facing)
+        ? FACING_ANGLES[facing]
         : 0;
-        
+
     const isLeft = (turn === 'Left');
     const centerAngle = startAngle + (isLeft ? (Math.PI / 2) : -(Math.PI / 2));
-    
+
     const centerX = startPoint.x + radius * Math.cos(centerAngle);
     const centerY = startPoint.y + radius * Math.sin(centerAngle);
-    
+
     const currentTheta = centerAngle + Math.PI;
     const sweep = isLeft ? (Math.PI / 2) : -(Math.PI / 2);
-    
+
     const points = [];
-    
+
     for (let i = 1; i <= steps; i++) {
         const t = i / steps;
         const angle = currentTheta + (sweep * t);
@@ -141,7 +141,7 @@ export function generateCurvePoints(startPoint, radius, facing, turn, steps = 20
             y: centerY + radius * Math.sin(angle)
         });
     }
-    
+
     return points;
 }
 
@@ -168,21 +168,21 @@ export function getPerpendicularProjection(p1, p2, targetPoint) {
     const B = targetPoint.y - p1.y;
     const C = p2.x - p1.x;
     const D = p2.y - p1.y;
-    
+
     const dot = A * C + B * D;
     const lenSq = C * C + D * D;
-    
+
     let param = -1;
     if (lenSq !== 0) {
         param = dot / lenSq;
     }
-    
+
     if (param > 0 && param < 1) {
         return {
             x: p1.x + param * C,
             y: p1.y + param * D
         };
     }
-    
+
     return null;
 }

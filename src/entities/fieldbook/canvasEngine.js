@@ -28,22 +28,22 @@ export default class CanvasEngine {
         /** @type {CanvasRenderingContext2D} */
         // @ts-ignore
         this.ctx = canvasElement.getContext('2d');
-        
+
         // Render Viewport Parameter Matrix
         this.camera = { x: 0, y: 0, zoom: 1.5 };
         this.pen = { x: 0, y: 0 };
         this.snap = { active: false, x: 0, y: 0, type: '' };
-        
+
         /** @type {MorphState} */
-        this.morphState = { 
-            active: false, 
-            fraction: 0, 
-            originalGeometry: [], 
+        this.morphState = {
+            active: false,
+            fraction: 0,
+            originalGeometry: [],
             targetGeometry: [],
             startTime: 0,
             duration: 2000
         };
-        
+
         this.isDragging = false;
         this.lastMouseX = 0;
         this.lastMouseY = 0;
@@ -55,7 +55,7 @@ export default class CanvasEngine {
         this.ctx.lineCap = 'round';
         this.ctx.lineJoin = 'round';
         this.resize();
-        
+
         window.addEventListener('resize', () => this.resize());
     }
 
@@ -84,7 +84,7 @@ export default class CanvasEngine {
     render() {
         // Clear viewport loop
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        
+
         const cx = this.canvas.width / 2;
         const cy = this.canvas.height / 2;
 
@@ -152,12 +152,12 @@ export default class CanvasEngine {
 
         // Save context state to prevent style pollution
         this.ctx.save();
-        
+
         this.ctx.lineWidth = 3;             // Slightly thicker line for high visibility
         this.ctx.strokeStyle = '#82ff6f';   // High-contrast Emerald Neon accent
         this.ctx.lineCap = 'round';
         this.ctx.lineJoin = 'round';
-        
+
         this.ctx.beginPath();
 
         // Establish the anchor mapping
@@ -166,7 +166,7 @@ export default class CanvasEngine {
             this.ctx.restore();
             return; // Abort path render if anchor is invalid
         }
-        
+
         const start = this.toScreen(firstPt.x, firstPt.y);
         this.ctx.moveTo(start.x, start.y);
 
@@ -178,15 +178,15 @@ export default class CanvasEngine {
             const screenPt = this.toScreen(pt.x, pt.y);
             this.ctx.lineTo(screenPt.x, screenPt.y);
         }
-        
+
         // If the original coordinates formed a closed loop, or if we are morphing, close the gap!
         const origLast = currentCoordinates[currentCoordinates.length - 1];
         const isClosedLoop = Math.abs(firstPt.x - origLast.x) < 0.1 && Math.abs(firstPt.y - origLast.y) < 0.1;
-        
+
         if (isClosedLoop || this.morphState.active) {
             this.ctx.closePath();
         }
-        
+
         this.ctx.stroke();
         this.ctx.restore(); // Restore safely
     }
@@ -202,10 +202,10 @@ export default class CanvasEngine {
         this.ctx.fillStyle = '#ffffff';
         this.ctx.font = '12px monospace';
         this.ctx.textAlign = 'left';
-        
+
         const coords = globalState.coordinates || [];
         this.ctx.fillText(`[SYS] Tracked Points: ${coords.length}`, 10, 20);
-        
+
         if (coords.length > 0) {
             const last = coords[coords.length - 1];
             this.ctx.fillText(`[SYS] Pen: {x: ${this.pen.x.toFixed(2)}, y: ${this.pen.y.toFixed(2)}}`, 10, 40);
@@ -223,11 +223,11 @@ export default class CanvasEngine {
             console.warn("[Canvas Engine] Need at least 3 points to morph.");
             return;
         }
-        
+
         const originalPts = [...globalState.coordinates];
         const centroid = getCentroid(originalPts);
-        const radius = 50; 
-        
+        const radius = 50;
+
         this.morphState = {
             active: true,
             fraction: 0,
@@ -236,23 +236,23 @@ export default class CanvasEngine {
             startTime: performance.now(),
             duration: duration
         };
-        
+
         const animate = (/** @type {number} */ time) => {
             if (!this.morphState.active) return;
-            
+
             let elapsed = time - this.morphState.startTime;
             let progress = Math.min(elapsed / this.morphState.duration, 1);
-            
+
             this.morphState.fraction = progress;
             this.render();
-            
+
             if (progress < 1) {
                 requestAnimationFrame(animate);
             } else {
                 console.log("✨ [Morph Sequence] Transformation complete. Ready for Tunnel.");
             }
         };
-        
+
         requestAnimationFrame(animate);
     }
 }
