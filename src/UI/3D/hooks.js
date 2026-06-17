@@ -40,14 +40,19 @@ export const COORDINATE_CONFIG_3D = Object.freeze({
  * @param {number} [elevationFactor=1.0] - Coefficient to scale vertical elevation
  * @returns {Vector3D}
  */
-export function map2DTo3D(coord2d, index = 0, elevationFactor = 1.0) {
+export function map2DTo3D(coord2d, index = 0, elevationFactor = 1.0, origin = null) {
     if (!coord2d || typeof coord2d.x !== 'number' || typeof coord2d.y !== 'number') {
         return { x: 0, y: 0, z: 0 };
     }
+
+    // If an origin is provided, shift the coordinate to be relative to it
+    const offsetX = origin ? origin.x : 0;
+    const offsetY = origin ? origin.y : 0;
+
     return {
-        x: coord2d.x * COORDINATE_CONFIG_3D.xScale,
+        x: (coord2d.x - offsetX) * COORDINATE_CONFIG_3D.xScale,
         y: COORDINATE_CONFIG_3D.baseElevation + (index * COORDINATE_CONFIG_3D.elevationStep * elevationFactor),
-        z: coord2d.y * COORDINATE_CONFIG_3D.zScale
+        z: (coord2d.y - offsetY) * COORDINATE_CONFIG_3D.zScale
     };
 }
 
@@ -60,14 +65,16 @@ export function use3DCoordinates(elevationFactor = 0.0) {
     const [coords, setCoords] = useState(globalState.coordinates || []);
 
     useEffect(() => {
-        // Subscribe to globalState changes
-        const unsubscribe = stateManager.subscribe((/** @type {import('../../turningFile.js').AppState} */ state) => {
+        const unsubscribe = stateManager.subscribe((state) => {
             setCoords(state.coordinates || []);
         });
         return () => unsubscribe();
     }, []);
 
-    return coords.map((/** @type {any} */ c, /** @type {number} */ idx) => map2DTo3D(c, idx, elevationFactor));
+    // Calculate origin from the first point
+    const origin = coords.length > 0 ? coords[0] : null;
+
+    return coords.map((c, idx) => map2DTo3D(c, idx, elevationFactor, origin));
 }
 
 /**
@@ -97,7 +104,7 @@ export function use3DMorphState() {
     const [morphActive, setMorphActive] = useState(false);
     const [fraction, setFraction] = useState(0);
     const [points, setPoints] = useState([]);
-    
+
     // We check the canvasEngineInstance's state to coordinate visual synchronization
     useEffect(() => {
         /** @type {number} */
@@ -108,7 +115,7 @@ export function use3DMorphState() {
             if (engine && engine.morphState) {
                 setMorphActive(engine.morphState.active);
                 setFraction(engine.morphState.fraction);
-                
+
                 if (engine.morphState.active) {
                     // Extract morph shape points
                     setPoints(engine.morphState.targetGeometry || []);
@@ -116,7 +123,7 @@ export function use3DMorphState() {
             }
             frameId = requestAnimationFrame(checkCanvasEngine);
         };
-        
+
         frameId = requestAnimationFrame(checkCanvasEngine);
         return () => cancelAnimationFrame(frameId);
     }, []);
@@ -146,7 +153,7 @@ export function calculateTraverse3D(startPosition, azimuthDegrees, distance, ele
         y: startPosition.z / COORDINATE_CONFIG_3D.zScale
     };
     const target2D = calculateTraverse(start2D, azimuthDegrees, distance);
-    
+
     return {
         x: target2D.x * COORDINATE_CONFIG_3D.xScale,
         y: startPosition.y + elevationGain,
