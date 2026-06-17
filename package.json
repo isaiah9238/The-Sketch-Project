@@ -28,5 +28,5 @@
     "stylus": "0.64.0",
     "three": "0.184.0"
   },
-  "packageManager": "pnpm@1.6.0"
+  "packageManager": "pnpm@10.5.2"
 }
