@@ -54,9 +54,10 @@ The Sketch Project/
         └── 3D/                # React Three Fiber 3D spatial visualizer codebase
             ├── hooks.js               # Mathematical 2D -> 3D mapping and React Hooks
             ├── CoordinateSpace3D.jsx  # High-contrast 3D plot boundary and node indicators
-            ├── Tunnel3D.jsx           # Glowing CatmullRomCurve3 spline tube and traveler duo
+            ├── SurveyScoutVehicle.jsx # 3D capsule mesh for the scout traveler
             ├── Surveyor3DCanvas.jsx   # R3F Root Scene, lights, fog, camera, and OrbitControls
-            └── mount3D.js             # React DOM root mounting bridge for main.js
+            ├── Tunnel3D.jsx           # Glowing CatmullRomCurve3 spline tube and traveler duo
+            └── mount3D.jsx            # React DOM root mounting bridge for main.js
 ```
 
 ---
@@ -92,7 +93,8 @@ The Sketch Project/
   The workspace divides the screen cleanly (50/50 flex flexbox) to mount the 2D canvas grid and the R3F interactive 3D Orbit view side-by-side.
 * **The Math Spline Tunnel Corridor:**
   When a "Morph" sequence is triggered, the drafting boundary coordinates smoothly interpolate into a perfect circle. In 3D, a `TubeGeometry` forms a winding spline tunnel through which the combined Duo Traveler (Field Book + Notepad companion) travels with sliding engine flares.
-* **MCP Integration:** `
+* **MCP Integration:** 
+  MCP Integration: mcp_config.json configures a standard input/output JSON-RPC bridge, allowing the environment to interact directly with local files safely without cloud exposure.
 
-`
-  A local filesystem server endpoint is configured for secure IDE file-tool bindings.
+
+//  A local filesystem server endpoint is configured for secure IDE file-tool bindings.
