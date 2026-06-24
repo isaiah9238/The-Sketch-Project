@@ -82,8 +82,9 @@ export default class CanvasEngine {
     }
 
     render() {
-        // Clear viewport loop
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        // Fill solid background so saved images aren't transparent/blank
+        this.ctx.fillStyle = '#050508';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
         const cx = this.canvas.width / 2;
         const cy = this.canvas.height / 2;

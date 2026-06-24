@@ -1,6 +1,10 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+  server: {
+    // Allows any localtunnel URL to securely bypass the host verification shield
+    allowedHosts: ['.loca.lt']
+  },
   build: {
     rollupOptions: {
       output: {
